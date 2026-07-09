@@ -1,0 +1,210 @@
+import sqlite3
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from app.database import get_db
+
+router = APIRouter(prefix="/brigades", tags=["brigades"])
+templates = Jinja2Templates(directory="app/templates")
+
+
+def _lookups(db: sqlite3.Connection) -> dict:
+    return {
+        "military_branches": db.execute(
+            "SELECT branch_id, branch_name FROM military_branches ORDER BY branch_name"
+        ).fetchall(),
+        "army_corps": db.execute(
+            "SELECT corps_id, corps_name FROM army_corps ORDER BY corps_name"
+        ).fetchall(),
+        "territorial_commands": db.execute(
+            "SELECT command_id, command_name FROM territorial_commands ORDER BY command_name"
+        ).fetchall(),
+        "troop_types": db.execute(
+            "SELECT type_id, type_name FROM troop_types ORDER BY type_name"
+        ).fetchall(),
+        "locations": db.execute(
+            """SELECT l.location_id, l.city_name, r.region_name
+               FROM locations l JOIN regions r ON l.region_id = r.region_id
+               ORDER BY l.city_name"""
+        ).fetchall(),
+    }
+
+
+@router.get("")
+def list_brigades(
+    request: Request,
+    military_branch_id: Optional[int] = None,
+    corps_id: Optional[int] = None,
+    territorial_command_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    db: sqlite3.Connection = Depends(get_db),
+):
+    query = """
+        SELECT b.brigade_id, b.name, mb.branch_name, ac.corps_name
+        FROM brigades b
+        LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
+        LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
+        LEFT JOIN locations l ON b.location_id = l.location_id
+        WHERE 1=1
+    """
+    params: list = []
+    if military_branch_id:
+        query += " AND b.military_branch_id = ?"
+        params.append(military_branch_id)
+    if corps_id:
+        query += " AND b.corps_id = ?"
+        params.append(corps_id)
+    if territorial_command_id:
+        query += " AND b.territorial_command_id = ?"
+        params.append(territorial_command_id)
+    if region_id:
+        query += " AND l.region_id = ?"
+        params.append(region_id)
+    query += " ORDER BY b.name"
+
+    brigades = db.execute(query, params).fetchall()
+    regions = db.execute("SELECT region_id, region_name FROM regions ORDER BY region_name").fetchall()
+
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {
+            "brigades": brigades,
+            "regions": regions,
+            **_lookups(db),
+            "filters": {
+                "military_branch_id": military_branch_id,
+                "corps_id": corps_id,
+                "territorial_command_id": territorial_command_id,
+                "region_id": region_id,
+            },
+        },
+    )
+
+
+@router.get("/new")
+def new_brigade_form(request: Request, db: sqlite3.Connection = Depends(get_db)):
+    return templates.TemplateResponse(
+        request,
+        "brigade_form.html",
+        {"brigade": None, **_lookups(db)},
+    )
+
+
+@router.post("/new")
+def create_brigade(
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    military_branch_id: Optional[int] = Form(None),
+    corps_id: Optional[int] = Form(None),
+    territorial_command_id: Optional[int] = Form(None),
+    troop_type_id: Optional[int] = Form(None),
+    location_id: Optional[int] = Form(None),
+    formed_date: Optional[str] = Form(None),
+    flag_date: Optional[str] = Form(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    cur = db.execute(
+        """INSERT INTO brigades
+           (name, description, military_branch_id, corps_id, territorial_command_id,
+            troop_type_id, location_id, formed_date, flag_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            name,
+            description or None,
+            military_branch_id,
+            corps_id,
+            territorial_command_id,
+            troop_type_id,
+            location_id,
+            formed_date or None,
+            flag_date or None,
+        ),
+    )
+    db.commit()
+    return RedirectResponse(url=f"/brigades/{cur.lastrowid}", status_code=303)
+
+
+@router.get("/{brigade_id}")
+def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    brigade = db.execute(
+        """SELECT b.*, mb.branch_name, ac.corps_name, tc.command_name, tt.type_name,
+                  l.city_name, r.region_name
+           FROM brigades b
+           LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
+           LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
+           LEFT JOIN territorial_commands tc ON b.territorial_command_id = tc.command_id
+           LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
+           LEFT JOIN locations l ON b.location_id = l.location_id
+           LEFT JOIN regions r ON l.region_id = r.region_id
+           WHERE b.brigade_id = ?""",
+        (brigade_id,),
+    ).fetchone()
+
+    stats = {
+        "battles": db.execute(
+            "SELECT COUNT(*) FROM brigade_battles WHERE brigade_id = ?", (brigade_id,)
+        ).fetchone()[0],
+        "equipment": db.execute(
+            "SELECT COUNT(*) FROM brigade_equipment WHERE brigade_id = ?", (brigade_id,)
+        ).fetchone()[0],
+        "traditions": db.execute(
+            "SELECT COUNT(*) FROM brigade_traditions WHERE brigade_id = ?", (brigade_id,)
+        ).fetchone()[0],
+    }
+
+    return templates.TemplateResponse(
+        request,
+        "brigade_detail.html",
+        {"brigade": brigade, "stats": stats},
+    )
+
+
+@router.get("/{brigade_id}/edit")
+def edit_brigade_form(brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    brigade = db.execute("SELECT * FROM brigades WHERE brigade_id = ?", (brigade_id,)).fetchone()
+    return templates.TemplateResponse(
+        request,
+        "brigade_form.html",
+        {"brigade": brigade, **_lookups(db)},
+    )
+
+
+@router.post("/{brigade_id}/edit")
+def update_brigade(
+    brigade_id: int,
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    military_branch_id: Optional[int] = Form(None),
+    corps_id: Optional[int] = Form(None),
+    territorial_command_id: Optional[int] = Form(None),
+    troop_type_id: Optional[int] = Form(None),
+    location_id: Optional[int] = Form(None),
+    formed_date: Optional[str] = Form(None),
+    flag_date: Optional[str] = Form(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    db.execute(
+        """UPDATE brigades SET
+               name = ?, description = ?, military_branch_id = ?, corps_id = ?,
+               territorial_command_id = ?, troop_type_id = ?, location_id = ?,
+               formed_date = ?, flag_date = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE brigade_id = ?""",
+        (
+            name,
+            description or None,
+            military_branch_id,
+            corps_id,
+            territorial_command_id,
+            troop_type_id,
+            location_id,
+            formed_date or None,
+            flag_date or None,
+            brigade_id,
+        ),
+    )
+    db.commit()
+    return RedirectResponse(url=f"/brigades/{brigade_id}", status_code=303)

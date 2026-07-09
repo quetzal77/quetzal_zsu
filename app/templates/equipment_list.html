@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Спорядження — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+    <h1>Спорядження</h1>
+    <table>
+        <thead><tr><th>Назва</th><th>Опис</th><th>Бригад закріплено</th></tr></thead>
+        <tbody>
+            {% for e in equipment %}
+                <tr>
+                    <td>{{ e.name }}</td>
+                    <td>{{ e.description or "—" }}</td>
+                    <td>{{ e.brigade_count }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3">Дані про спорядження ще не додано.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

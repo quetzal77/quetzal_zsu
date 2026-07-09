@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Традиції — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+    <h1>Традиції</h1>
+    <table>
+        <thead><tr><th>Назва</th><th>Опис</th><th>Бригад закріплено</th></tr></thead>
+        <tbody>
+            {% for t in traditions %}
+                <tr>
+                    <td>{{ t.title }}</td>
+                    <td>{{ t.description or "—" }}</td>
+                    <td>{{ t.brigade_count }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3">Дані про традиції ще не додано.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

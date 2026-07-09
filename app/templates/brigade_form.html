@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{% if brigade %}Редагування бригади{% else %}Нова бригада{% endif %}{% endblock %}
+{% block content %}
+    <h1>{% if brigade %}Редагування: {{ brigade.name }}{% else %}Нова бригада{% endif %}</h1>
+
+    <form class="brigade-form" method="post"
+          action="{% if brigade %}/brigades/{{ brigade.brigade_id }}/edit{% else %}/brigades/new{% endif %}">
+
+        <label for="name">Назва</label>
+        <input id="name" name="name" required value="{{ brigade.name if brigade else '' }}">
+
+        <label for="description">Опис</label>
+        <textarea id="description" name="description" rows="3">{{ brigade.description if brigade else '' }}</textarea>
+
+        <label for="military_branch_id">Рід військ</label>
+        <select id="military_branch_id" name="military_branch_id">
+            <option value="">—</option>
+            {% for mb in military_branches %}
+                <option value="{{ mb.branch_id }}" {% if brigade and brigade.military_branch_id == mb.branch_id %}selected{% endif %}>{{ mb.branch_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="corps_id">Корпус</label>
+        <select id="corps_id" name="corps_id">
+            <option value="">—</option>
+            {% for c in army_corps %}
+                <option value="{{ c.corps_id }}" {% if brigade and brigade.corps_id == c.corps_id %}selected{% endif %}>{{ c.corps_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="territorial_command_id">Територіальне командування</label>
+        <select id="territorial_command_id" name="territorial_command_id">
+            <option value="">—</option>
+            {% for tc in territorial_commands %}
+                <option value="{{ tc.command_id }}" {% if brigade and brigade.territorial_command_id == tc.command_id %}selected{% endif %}>{{ tc.command_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="troop_type_id">Тип військ</label>
+        <select id="troop_type_id" name="troop_type_id">
+            <option value="">—</option>
+            {% for tt in troop_types %}
+                <option value="{{ tt.type_id }}" {% if brigade and brigade.troop_type_id == tt.type_id %}selected{% endif %}>{{ tt.type_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="location_id">ППД</label>
+        <select id="location_id" name="location_id">
+            <option value="">—</option>
+            {% for l in locations %}
+                <option value="{{ l.location_id }}" {% if brigade and brigade.location_id == l.location_id %}selected{% endif %}>{{ l.city_name }}, {{ l.region_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="formed_date">Засновано (YYYY-MM-DD)</label>
+        <input id="formed_date" name="formed_date" value="{{ brigade.formed_date if brigade else '' }}">
+
+        <label for="flag_date">Бойовий прапор (YYYY-MM-DD)</label>
+        <input id="flag_date" name="flag_date" value="{{ brigade.flag_date if brigade else '' }}">
+
+        <button type="submit">{% if brigade %}Зберегти{% else %}Створити{% endif %}</button>
+    </form>
+{% endblock %}

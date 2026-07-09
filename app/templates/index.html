@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+    <h1>Бригади</h1>
+
+    <form class="filters" method="get" action="/brigades">
+        <select name="military_branch_id" onchange="this.form.submit()">
+            <option value="">Рід військ — усі</option>
+            {% for mb in military_branches %}
+                <option value="{{ mb.branch_id }}" {% if filters.military_branch_id == mb.branch_id %}selected{% endif %}>{{ mb.branch_name }}</option>
+            {% endfor %}
+        </select>
+        <select name="corps_id" onchange="this.form.submit()">
+            <option value="">Корпус — усі</option>
+            {% for c in army_corps %}
+                <option value="{{ c.corps_id }}" {% if filters.corps_id == c.corps_id %}selected{% endif %}>{{ c.corps_name }}</option>
+            {% endfor %}
+        </select>
+        <select name="territorial_command_id" onchange="this.form.submit()">
+            <option value="">Тер. командування — усі</option>
+            {% for tc in territorial_commands %}
+                <option value="{{ tc.command_id }}" {% if filters.territorial_command_id == tc.command_id %}selected{% endif %}>{{ tc.command_name }}</option>
+            {% endfor %}
+        </select>
+        <select name="region_id" onchange="this.form.submit()">
+            <option value="">Регіон — усі</option>
+            {% for r in regions %}
+                <option value="{{ r.region_id }}" {% if filters.region_id == r.region_id %}selected{% endif %}>{{ r.region_name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <div class="actions">
+        <a href="/brigades/new">+ Додати бригаду</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>Назва</th><th>Рід військ</th><th>Корпус</th></tr>
+        </thead>
+        <tbody>
+            {% for b in brigades %}
+                <tr>
+                    <td><a href="/brigades/{{ b.brigade_id }}">{{ b.name }}</a></td>
+                    <td>{{ b.branch_name or "—" }}</td>
+                    <td>{{ b.corps_name or "—" }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3">Нічого не знайдено.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

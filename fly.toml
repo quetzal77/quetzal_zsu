@@ -1,0 +1,23 @@
+app = "quetzal-zsu-brigades"
+primary_region = "waw"
+
+[build]
+
+[env]
+  PORT = "8000"
+
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[mounts]
+  source = "quetzal_zsu_data"
+  destination = "/srv/data"

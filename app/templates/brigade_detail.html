@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ brigade.name }} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+    <h1>{{ brigade.name }}</h1>
+
+    <table>
+        <tr><th>Рід військ</th><td>{{ brigade.branch_name or "—" }}</td></tr>
+        <tr><th>Корпус</th><td>{{ brigade.corps_name or "—" }}</td></tr>
+        <tr><th>Тер. командування</th><td>{{ brigade.command_name or "—" }}</td></tr>
+        <tr><th>Тип військ</th><td>{{ brigade.type_name or "—" }}</td></tr>
+        <tr><th>ППД</th><td>{{ brigade.city_name or "—" }}{% if brigade.region_name %}, {{ brigade.region_name }}{% endif %}</td></tr>
+        <tr><th>Засновано</th><td>{{ brigade.formed_date or "—" }}</td></tr>
+        <tr><th>Прапор</th><td>{{ brigade.flag_date or "—" }}</td></tr>
+        <tr><th>Опис</th><td>{{ brigade.description or "—" }}</td></tr>
+    </table>
+
+    <div class="stats">
+        <div class="stat"><strong>{{ stats.battles }}</strong> битв</div>
+        <div class="stat"><strong>{{ stats.equipment }}</strong> одиниць спорядження</div>
+        <div class="stat"><strong>{{ stats.traditions }}</strong> традицій</div>
+    </div>
+
+    <div class="actions">
+        <a href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
+        · <a href="/brigades">← До списку бригад</a>
+    </div>
+{% endblock %}

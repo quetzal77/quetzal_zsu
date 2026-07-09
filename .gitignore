@@ -61,3 +61,6 @@ dmypy.json
 *.swp
 .DS_Store
 Thumbs.db
+
+# quetzal_zsu.ps1 runtime state
+.quetzal_zsu.pid

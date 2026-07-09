@@ -1,0 +1,100 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    color: #1a1a1a;
+    background: #fafafa;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    background: #14324d;
+    color: #fff;
+}
+
+header .brand {
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+header nav a {
+    color: #dce6ee;
+    margin-left: 1rem;
+    text-decoration: none;
+}
+
+header nav a:hover {
+    text-decoration: underline;
+}
+
+main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.filters {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.filters select {
+    padding: 0.3rem;
+}
+
+.stats {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1rem 0;
+}
+
+.stats .stat {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+}
+
+form.brigade-form label {
+    display: block;
+    margin-top: 0.75rem;
+    font-weight: 600;
+}
+
+form.brigade-form input,
+form.brigade-form select,
+form.brigade-form textarea {
+    width: 100%;
+    padding: 0.4rem;
+    margin-top: 0.25rem;
+}
+
+form.brigade-form button {
+    margin-top: 1rem;
+    padding: 0.5rem 1.25rem;
+}
+
+.actions {
+    margin-top: 1rem;
+}

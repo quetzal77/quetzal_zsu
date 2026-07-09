@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ battle.name }} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+    <h1>{{ battle.name }}</h1>
+
+    <table>
+        <tr><th>Початок</th><td>{{ battle.start_date or "—" }}</td></tr>
+        <tr><th>Кінець</th><td>{{ battle.end_date or "—" }}</td></tr>
+        <tr><th>Локація</th><td>{{ battle.city_name or "—" }}{% if battle.region_name %}, {{ battle.region_name }}{% endif %}</td></tr>
+        <tr><th>Опис</th><td>{{ battle.description or "—" }}</td></tr>
+    </table>
+
+    <h2>Бригади-учасниці</h2>
+    <table>
+        <thead><tr><th>Бригада</th><th>Роль</th></tr></thead>
+        <tbody>
+            {% for br in brigades %}
+                <tr>
+                    <td><a href="/brigades/{{ br.brigade_id }}">{{ br.name }}</a></td>
+                    <td>{{ br.role or "—" }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="2">Учасники ще не додані.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="actions">
+        <a href="/battles">← До списку битв</a>
+    </div>
+{% endblock %}
