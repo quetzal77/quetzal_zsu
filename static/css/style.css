@@ -33,6 +33,7 @@
 }
 
 * { box-sizing: border-box; }
+.is-hidden { display: none !important; }
 html, body { margin: 0; padding: 0; }
 body {
   font-family: "Calibri","Source Sans Pro","Segoe UI",system-ui,sans-serif;
@@ -94,7 +95,6 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .filters-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; padding: 8px 14px; cursor: pointer; border-radius: 2px; background: #fff; border: 1px solid var(--input); color: var(--muted); }
 .filters-toggle.is-on { background: var(--green); border-color: var(--green); color: #fff; }
 .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 26px; }
-.filters.is-hidden { display: none; }
 .filter-strip { display: flex; align-items: center; gap: 16px; row-gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 2px; padding: 9px 16px; }
 .filter-strip__label { flex: none; width: 130px; color: var(--faint); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
 .chips { display: flex; flex: 1 1 auto; min-width: 0; gap: 6px; flex-wrap: wrap; }
@@ -218,6 +218,22 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 
 /* ---------- Catalog / dashboard ---------- */
 .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 14px; }
+.catalog-grid a.panel:hover { border-color: var(--green); box-shadow: var(--shadow-h); transform: translateY(-2px); }
+
+/* ---------- Tradition card ---------- */
+.tradition-card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; height: 210px; text-decoration: none; color: inherit; cursor: pointer; transition: border-color .15s, box-shadow .15s; overflow: hidden; }
+/* no photo: body grows to fill all space */
+.tradition-card__body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+/* with photo: body does NOT grow — only as tall as title + 3-line desc */
+.tradition-card.has-photo .tradition-card__body { flex: 0 0 auto; }
+.tradition-card__title { flex: none; color: var(--ink); font-weight: 700; font-size: 15px; line-height: 1.25; }
+/* no photo: description fills remaining body height */
+.tradition-card__desc { flex: 1; color: var(--muted); font-size: 12px; margin-top: 4px; overflow: hidden; line-height: 1.5; }
+/* with photo: clamp to 3 lines, don't grow */
+.tradition-card.has-photo .tradition-card__desc { flex: none; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tradition-card__photo { flex: none; overflow: hidden; border-radius: 3px; max-height: 44px; display: flex; align-items: center; }
+.tradition-card__photo img { width: 100%; height: auto; object-fit: contain; max-height: 44px; }
+.tradition-card__foot { flex: none; display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line-2); margin-top: auto; }
 .kpi-band { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 24px; }
 .kpi { background: #fff; padding: 22px 24px; }
 .kpi b { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--green); line-height: 1; display: block; }

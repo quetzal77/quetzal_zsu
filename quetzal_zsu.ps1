@@ -1,4 +1,5 @@
-﻿param(
+﻿
+param(
     [Parameter(Position = 0)]
     [ValidateSet("run", "check", "install", "stop")]
     [string]$Command = "run",

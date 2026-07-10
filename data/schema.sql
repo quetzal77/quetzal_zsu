@@ -54,6 +54,7 @@ CREATE TABLE traditions (
     tradition_id   INTEGER PRIMARY KEY,
     title          TEXT NOT NULL UNIQUE,
     description    TEXT,
+    photo          TEXT,
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -141,6 +142,8 @@ CREATE TABLE brigade_traditions (
     brigade_id      INTEGER NOT NULL REFERENCES brigades (brigade_id),
     tradition_id    INTEGER NOT NULL REFERENCES traditions (tradition_id),
     date_assigned   DATE,
+    unit_name       TEXT,
+    photo           TEXT,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (brigade_id, tradition_id)
 );

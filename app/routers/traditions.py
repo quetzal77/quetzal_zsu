@@ -1,6 +1,8 @@
 import sqlite3
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import RedirectResponse
 
 from app.database import get_db
 from app.templates import templates
@@ -8,10 +10,18 @@ from app.templates import templates
 router = APIRouter(prefix="/traditions", tags=["traditions"])
 
 
+def _all_brigades(db: sqlite3.Connection):
+    return db.execute(
+        """SELECT brigade_id, name FROM brigades
+           ORDER BY CAST(name AS INTEGER), name"""
+    ).fetchall()
+
+
 @router.get("")
 def list_traditions(request: Request, db: sqlite3.Connection = Depends(get_db)):
     traditions = db.execute(
-        """SELECT t.tradition_id, t.title, t.description, COUNT(bt.brigade_id) AS brigade_count
+        """SELECT t.tradition_id, t.title, t.description, t.photo,
+                  COUNT(bt.brigade_id) AS brigade_count
            FROM traditions t
            LEFT JOIN brigade_traditions bt ON t.tradition_id = bt.tradition_id
            GROUP BY t.tradition_id
@@ -20,3 +30,126 @@ def list_traditions(request: Request, db: sqlite3.Connection = Depends(get_db)):
     return templates.TemplateResponse(
         request, "traditions_list.html", {"traditions": traditions}
     )
+
+
+@router.get("/new")
+def new_tradition_form(request: Request, db: sqlite3.Connection = Depends(get_db)):
+    return templates.TemplateResponse(
+        request, "tradition_form.html",
+        {"tradition": None, "brigades": [], "all_brigades": _all_brigades(db)},
+    )
+
+
+@router.post("")
+def create_tradition(
+    title: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    cur = db.execute(
+        "INSERT INTO traditions (title, description) VALUES (?, ?)",
+        (title, description or None),
+    )
+    db.commit()
+    return RedirectResponse(url=f"/traditions/{cur.lastrowid}/edit", status_code=303)
+
+
+@router.get("/{tradition_id}")
+def tradition_detail(tradition_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    tradition = db.execute(
+        "SELECT * FROM traditions WHERE tradition_id = ?", (tradition_id,)
+    ).fetchone()
+
+    brigades = db.execute(
+        """SELECT b.brigade_id, b.name, mb.branch_name, ac.corps_name,
+                  bt.date_assigned, bt.unit_name
+           FROM brigade_traditions bt
+           JOIN brigades b ON bt.brigade_id = b.brigade_id
+           LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
+           LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
+           WHERE bt.tradition_id = ?
+           ORDER BY CAST(b.name AS INTEGER), b.name""",
+        (tradition_id,),
+    ).fetchall()
+
+    return templates.TemplateResponse(
+        request,
+        "tradition_detail.html",
+        {"tradition": tradition, "brigades": brigades},
+    )
+
+
+@router.get("/{tradition_id}/edit")
+def edit_tradition_form(tradition_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    tradition = db.execute(
+        "SELECT * FROM traditions WHERE tradition_id = ?", (tradition_id,)
+    ).fetchone()
+
+    brigades = db.execute(
+        """SELECT b.brigade_id, b.name, bt.date_assigned, bt.unit_name
+           FROM brigade_traditions bt
+           JOIN brigades b ON bt.brigade_id = b.brigade_id
+           WHERE bt.tradition_id = ?
+           ORDER BY CAST(b.name AS INTEGER), b.name""",
+        (tradition_id,),
+    ).fetchall()
+
+    # brigades not yet assigned to this tradition
+    assigned_ids = {r["brigade_id"] for r in brigades}
+    all_brigades = [b for b in _all_brigades(db) if b["brigade_id"] not in assigned_ids]
+
+    return templates.TemplateResponse(
+        request,
+        "tradition_form.html",
+        {
+            "tradition": tradition,
+            "brigades": brigades,
+            "all_brigades": all_brigades,
+        },
+    )
+
+
+@router.post("/{tradition_id}/edit")
+def update_tradition(
+    tradition_id: int,
+    title: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    db.execute(
+        """UPDATE traditions SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE tradition_id = ?""",
+        (title, description or None, tradition_id),
+    )
+    db.commit()
+    return RedirectResponse(url="/traditions", status_code=303)
+
+
+@router.post("/{tradition_id}/brigades")
+def add_brigade_to_tradition(
+    tradition_id: int,
+    brigade_id: int = Form(...),
+    date_assigned: Optional[str] = Form(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    db.execute(
+        """INSERT OR IGNORE INTO brigade_traditions (brigade_id, tradition_id, date_assigned)
+           VALUES (?, ?, ?)""",
+        (brigade_id, tradition_id, date_assigned or None),
+    )
+    db.commit()
+    return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)
+
+
+@router.post("/{tradition_id}/brigades/{brigade_id}/remove")
+def remove_brigade_from_tradition(
+    tradition_id: int,
+    brigade_id: int,
+    db: sqlite3.Connection = Depends(get_db),
+):
+    db.execute(
+        "DELETE FROM brigade_traditions WHERE tradition_id = ? AND brigade_id = ?",
+        (tradition_id, brigade_id),
+    )
+    db.commit()
+    return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)

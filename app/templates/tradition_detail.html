@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ tradition.title }} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="/traditions">← До традицій</a>
+
+<div class="detail-head">
+  <div class="detail-head__main">
+    <div class="detail-eyebrow">Традиція</div>
+    <h1>{{ tradition.title }}</h1>
+    {% if tradition.description %}<div class="sub" style="margin-top:8px">{{ tradition.description }}</div>{% endif %}
+    {% if tradition.photo %}
+      <div style="margin-top:16px">
+        <img src="/static/img/{{ tradition.photo }}" alt="{{ tradition.title }}"
+             style="max-width:100%;height:auto;border-radius:4px">
+      </div>
+    {% endif %}
+  </div>
+  <a class="btn-outline" href="/traditions/{{ tradition.tradition_id }}/edit">Редагувати</a>
+</div>
+
+<div class="panel">
+  <div class="panel__head">
+    <span>Бригади з цією традицією</span>
+    <span class="mono" style="color:var(--green)">{{ brigades|length }}</span>
+  </div>
+  {% if brigades %}
+    <div class="table-wrap">
+      <table class="brigades-table">
+        <thead>
+          <tr>
+            <th>Назва бригади</th>
+            <th>Рід військ</th>
+            <th>Корпус</th>
+            <th>Підрозділ</th>
+            <th>Дата присвоєння</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in brigades %}
+            <tr onclick="location.href='/brigades/{{ b.brigade_id }}'">
+              <td class="cell-name"><b>{{ b.name }}</b></td>
+              <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
+              <td>{{ b.corps_name or '—' }}</td>
+              <td>{{ b.unit_name or '—' }}</td>
+              <td class="mono">{{ b.date_assigned or '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">Жодна бригада ще не має цієї традиції.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{% if tradition %}Редагування традиції{% else %}Нова традиція{% endif %} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="/traditions">← Скасувати</a>
+<div class="page-eyebrow" style="margin-bottom:8px">{% if tradition %}Редагування{% else %}Новий запис{% endif %}</div>
+<h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">
+  {% if tradition %}{{ tradition.title }}{% else %}Нова традиція{% endif %}
+</h1>
+
+{# ── Головна форма: назва + опис ── #}
+<form id="main-form" class="brigade-form" method="post"
+      action="{% if tradition %}/traditions/{{ tradition.tradition_id }}/edit{% else %}/traditions{% endif %}">
+  <div class="form-grid">
+    <div class="field field--wide">
+      <label for="title">Назва *</label>
+      <input id="title" name="title" required
+             value="{{ tradition.title if tradition else '' }}"
+             placeholder="напр. Побратимство">
+    </div>
+    <div class="field field--wide">
+      <label for="description">Опис</label>
+      <textarea id="description" name="description" rows="4"
+                placeholder="Короткий опис традиції…">{{ tradition.description if tradition else '' }}</textarea>
+    </div>
+  </div>
+
+  {# ── Секція бригад (тільки при редагуванні) ── #}
+  {% if tradition %}
+
+    {# поля додавання + кнопка «Додати» — прив'язані до окремої форми add-brigade-form #}
+    {% if all_brigades %}
+      <div class="form-grid" style="margin-top:24px;gap:14px 20px">
+        <div class="field">
+          <label for="brigade_id">Обрати бригаду</label>
+          <select id="brigade_id" name="brigade_id" form="add-brigade-form" required>
+            <option value="">— обрати —</option>
+            {% for b in all_brigades %}
+              <option value="{{ b.brigade_id }}">{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="date_assigned">Дата призначення (РРРР-ММ-ДД)</label>
+          <input id="date_assigned" name="date_assigned" class="mono"
+                 placeholder="РРРР-ММ-ДД" form="add-brigade-form">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button type="submit" form="add-brigade-form" class="btn-outline">+ Додати до списку</button>
+      </div>
+    {% endif %}
+
+    {# список вже доданих бригад #}
+    {% if brigades %}
+      <div style="margin-top:24px;margin-bottom:8px;color:var(--faint);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700">
+        Вже призначено
+      </div>
+      <div class="panel" style="margin-bottom:8px">
+        {% for b in brigades %}
+          <div class="list-row">
+            <span style="min-width:0;overflow:hidden">
+              <span style="color:var(--ink);font-weight:600;font-size:14px">{{ b.name }}</span>
+              {% if b.date_assigned %}
+                <span class="mono" style="color:var(--faint);font-size:12px;margin-left:10px">{{ b.date_assigned }}</span>
+              {% endif %}
+            </span>
+            <button type="submit" form="remove-{{ b.brigade_id }}"
+                    class="btn-ghost"
+                    style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
+                    onclick="return confirm('Видалити цю бригаду?')">✕</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% elif not all_brigades %}
+      {# all_brigades empty AND brigades empty — all assigned #}
+    {% else %}
+      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодна бригада ще не призначена.</div>
+    {% endif %}
+
+  {% endif %}
+
+  {# ── Кнопки ── #}
+  <div class="form-actions">
+    <button type="submit" form="main-form" class="btn-primary">
+      {% if tradition %}Зберегти зміни{% else %}Створити традицію{% endif %}
+    </button>
+    <a class="btn-ghost" href="/traditions">Скасувати</a>
+  </div>
+</form>
+
+{# ── Прихована форма для додавання бригади ── #}
+{% if tradition %}
+  <form id="add-brigade-form" method="post"
+        action="/traditions/{{ tradition.tradition_id }}/brigades"
+        style="display:none"></form>
+
+  {# ── Форми для видалення бригад ── #}
+  {% for b in brigades %}
+    <form id="remove-{{ b.brigade_id }}" method="post"
+          action="/traditions/{{ tradition.tradition_id }}/brigades/{{ b.brigade_id }}/remove"
+          style="display:none"></form>
+  {% endfor %}
+{% endif %}
+{% endblock %}
