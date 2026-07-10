@@ -2,19 +2,24 @@
 
 Довідковий сайт про бригади, битви, спорядження й традиції Збройних Сил України.
 Дані зберігаються в SQLite (`data/quetzal_zsu.db`), рендеринг сторінок — на сервері (FastAPI + Jinja2),
-без збірки фронтенду. Детальний опис архітектури — у [`docs/architecture.md`](docs/architecture.md).
+без збірки фронтенду.
 
 ## Функціонал
 
-- Список бригад із фільтрами за родом військ, корпусом, територіальним командуванням і регіоном
-- Детальна сторінка бригади: битви, спорядження, традиції, базова статистика
+- Реєстр бригад із фільтрами за родом військ, корпусом, територіальним командуванням, типом військ і регіоном
+- Два режими перегляду: картки і таблиця
+- Живий пошук за назвою/номером бригади без перезавантаження сторінки
+- Нарукавні знаки бригад (прозорий PNG, єдиний стандарт 440×520)
+- Детальна сторінка бригади: бойовий шлях, спорядження, традиції, фотогалерея, статистика
 - Форма створення й редагування бригади (без автентифікації)
 - Хронологія битв з переліком бригад-учасниць і їх ролі
-- Довідники: спорядження, традиції, локації, регіони
+- Сторінка статистики: розподіл за родом військ і ОК, хронологія битв
+- Довідники: спорядження, традиції
+- Favicon — жовтий тризуб ЗСУ
 
 ## Стек
 
-Python 3.12+ · FastAPI · Uvicorn · Jinja2 · SQLite (stdlib `sqlite3`, без ORM)
+Python 3.13 · FastAPI · Uvicorn · Jinja2 · SQLite (stdlib `sqlite3`, без ORM)
 
 ## Структура проєкту
 
@@ -23,92 +28,80 @@ app/
 ├── main.py            # точка входу FastAPI
 ├── database.py        # підключення до data/quetzal_zsu.db
 ├── models.py          # Pydantic-схеми
-├── routers/           # brigades, battles, equipment, traditions, locations
+├── templates.py       # спільний Jinja2Templates + cache-busting CSS
+├── routers/           # brigades, battles, equipment, traditions, stats
 └── templates/         # Jinja2 HTML-шаблони
-static/                # CSS, зображення
+static/
+├── css/style.css      # всі стилі (без збірки)
+└── img/               # нарукавні знаки бригад + логотипи ЗСУ
 data/
 ├── quetzal_zsu.db     # база даних SQLite
-└── schema.sql          # канонічна версійована схема БД
-docs/                  # архітектурна документація, довідкові дані
-quetzal_zsu.ps1        # скрипт запуску/зупинки для Windows PowerShell
+└── schema.sql         # канонічна версійована схема БД
+docs/                  # архітектурний опис, вихідні дані бригад
+.claude/skills/        # Claude Code скіли для розробки
+quetzal_zsu.ps1        # Windows-скрипт: run / stop / check / install
 ```
+
+Детальніше про архітектуру і технічні рішення — у [`CLAUDE.md`](CLAUDE.md) та [`docs/architecture.md`](docs/architecture.md).
+
+---
 
 ## Запуск
 
-Потрібен лише **Python 3.12+**. Проєкт можна запустити двома способами: через готовий
-PowerShell-скрипт (Windows) або вручну (Windows/macOS/Linux) — обидва варіанти нижче.
+Потрібен лише **Python 3.12+**.
 
-### Варіант 1 — Windows, через `quetzal_zsu.ps1` (найпростіше)
+### Windows — через `quetzal_zsu.ps1`
 
-Скрипт сам перевіряє Python, встановлює відсутні залежності, перевіряє наявність БД і запускає сервер.
+Скрипт перевіряє Python, встановлює залежності, запускає сервер. Якщо налаштовано псевдонім у `$PROFILE`:
 
 ```powershell
-# з кореня репозиторію
+quetzal_zsu run     # запустити
+quetzal_zsu stop    # зупинити
+quetzal_zsu check   # перевірка без запуску
+```
+
+Або напряму:
+```powershell
 powershell -ExecutionPolicy Bypass -File .\quetzal_zsu.ps1 run
 ```
 
 Відкрити: http://127.0.0.1:8000/brigades
 
-Зупинити сервер:
-```powershell
-powershell -ExecutionPolicy Bypass -File .\quetzal_zsu.ps1 stop
-```
-
-Інші команди: `check` (лише перевірка готовності), `install` (лише встановити залежності).
-Додаткові параметри: `-Port 8080`, `-BindHost 0.0.0.0`, `-NoReload`.
-
-**Щоб викликати просто `quetzal_zsu run` без шляху до файлу** — додай у свій PowerShell-профіль
-(`$PROFILE`) функцію:
-```powershell
-function quetzal_zsu { & "ПОВНИЙ_ШЛЯХ_ДО_РЕПО\quetzal_zsu.ps1" @args }
-```
-і відкрий новий термінал.
-
-### Варіант 2 — будь-яка ОС, вручну
+### Будь-яка ОС — вручну
 
 ```bash
-# 1. Клонувати репозиторій і перейти в нього
-git clone <URL_РЕПОЗИТОРІЮ>
+git clone <URL>
 cd quetzal_zsu
 
-# 2. (рекомендовано) створити віртуальне середовище
 python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# 3. Встановити залежності
 pip install -r requirements.txt
-
-# 4. Запустити сервер
 python -m uvicorn app.main:app --reload
 ```
 
-Відкрити: http://127.0.0.1:8000/brigades
+Відкрити: http://127.0.0.1:8000/brigades · Зупинити: `Ctrl+C`
 
-Зупинити: `Ctrl+C` у тому ж терміналі.
+> Якщо `uvicorn` не знаходиться в PATH — завжди використовуй `python -m uvicorn ...`
 
-> Якщо команда `uvicorn` не знаходиться напряму (не в PATH) — завжди можна запускати через
-> `python -m uvicorn ...`, як показано вище.
-
-### Варіант 3 — Docker (без встановлення Python на хост)
+### Docker
 
 ```bash
 docker build -t quetzal-zsu .
 docker run --rm -p 8000:8000 -v "$(pwd)/data:/srv/data" quetzal-zsu
 ```
 
-Відкрити: http://127.0.0.1:8000/brigades
+---
 
 ## Дані
 
-БД `data/quetzal_zsu.db` вже містить довідники (роди військ, корпуси, регіони тощо) та частину бригад,
-завантажену з `docs/brigades.md`. Схема версіонується в `data/schema.sql` — якщо потрібно перестворити
-базу з нуля, застосуй цей файл до нового порожнього `.db` через `sqlite3`/`python -m sqlite3`.
+`data/quetzal_zsu.db` містить повні довідники (роди військ, корпуси, регіони тощо) та бригади ДШВ із нарукавними знаками.
+Схема версіонується в `data/schema.sql`.
 
-Для імпорту решти розділів `docs/brigades.md` є проєктний скіл `.claude/skills/add-brigades`
-(Claude Code): `/add-brigades <назва розділу>`.
+Для імпорту бригад з `docs/brigades.md` (Claude Code): `/add-brigades <назва розділу>`
+Для додавання нарукавного знака (Claude Code): `/add-brigade-emblem`
 
 ## Розгортання
 
-Варіанти безкоштовного хостингу з персистентним диском для SQLite — розділ 4
-[`docs/architecture.md`](docs/architecture.md#4-де-розмістити-портал) (рекомендовано Fly.io,
-конфіг — `fly.toml`).
+Рекомендовано **Fly.io** (безкоштовний persistent volume для SQLite). Конфіг: `fly.toml`.
+Детальніше: [`docs/architecture.md`](docs/architecture.md#4-де-розмістити-портал).

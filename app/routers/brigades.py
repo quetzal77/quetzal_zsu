@@ -46,6 +46,7 @@ def list_brigades(
     military_branch_id: Optional[str] = None,
     corps_id: Optional[str] = None,
     territorial_command_id: Optional[str] = None,
+    troop_type_id: Optional[str] = None,
     region_id: Optional[str] = None,
     q: Optional[str] = None,
     db: sqlite3.Connection = Depends(get_db),
@@ -53,17 +54,16 @@ def list_brigades(
     military_branch_id = _optional_int(military_branch_id)
     corps_id = _optional_int(corps_id)
     territorial_command_id = _optional_int(territorial_command_id)
+    troop_type_id = _optional_int(troop_type_id)
     region_id = _optional_int(region_id)
 
     query = """
         SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date,
-               mb.branch_name, ac.corps_name, l.city_name,
-               COUNT(bb.battle_id) AS battle_count
+               mb.branch_name, ac.corps_name, l.city_name
         FROM brigades b
         LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
         LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
         LEFT JOIN locations l ON b.location_id = l.location_id
-        LEFT JOIN brigade_battles bb ON bb.brigade_id = b.brigade_id
         WHERE 1=1
     """
     params: list = []
@@ -76,6 +76,9 @@ def list_brigades(
     if territorial_command_id:
         query += " AND b.territorial_command_id = ?"
         params.append(territorial_command_id)
+    if troop_type_id:
+        query += " AND b.troop_type_id = ?"
+        params.append(troop_type_id)
     if region_id:
         query += " AND l.region_id = ?"
         params.append(region_id)
@@ -86,7 +89,7 @@ def list_brigades(
         params.extend([f"{q}%", f"% {q}%", f"%-{q}%"])
     # CAST(name AS INTEGER) бере лише провідний номер бригади ("142-га ..." -> 142),
     # тому сортування виходить числове (15 перед 142), а не лексикографічне ("142" перед "15").
-    query += " GROUP BY b.brigade_id ORDER BY CAST(b.name AS INTEGER), b.name"
+    query += " ORDER BY CAST(b.name AS INTEGER), b.name"
 
     brigades = db.execute(query, params).fetchall()
     regions = db.execute("SELECT region_id, region_name FROM regions ORDER BY region_name").fetchall()
@@ -102,6 +105,7 @@ def list_brigades(
                 "military_branch_id": military_branch_id,
                 "corps_id": corps_id,
                 "territorial_command_id": territorial_command_id,
+                "troop_type_id": troop_type_id,
                 "region_id": region_id,
             },
         },

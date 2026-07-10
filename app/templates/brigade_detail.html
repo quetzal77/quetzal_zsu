@@ -4,7 +4,7 @@
 <a class="back-link" href="/brigades">← До реєстру бригад</a>
 
 <div class="detail-head">
-  <div class="detail-emblem">
+  <div class="detail-emblem {{ 'has-image' if brigade.emblem_file }}">
     {% if brigade.emblem_file %}<img src="/static/img/{{ brigade.emblem_file }}" alt="Емблема {{ brigade.name }}">
     {% else %}{{ brigade.name.split(' ')[0] if brigade.name else '—' }}{% endif %}
   </div>

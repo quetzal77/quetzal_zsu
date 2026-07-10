@@ -2,7 +2,7 @@
 {% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
 {% block content %}
 {% set view = request.query_params.get('view', 'cards') %}
-{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id %}
+{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id %}
 
 <form method="get" action="/brigades" id="filterform">
   <input type="hidden" name="q" value="{{ request.query_params.get('q','') }}">
@@ -56,28 +56,49 @@
         {% endfor %}
       </div>
     </div>
+
+    <div class="filter-strip">
+      <span class="filter-strip__label">Тип військ</span>
+      <div class="chips">
+        <label class="chip {{ 'is-active' if not filters.troop_type_id }}">
+          <input type="radio" name="troop_type_id" value="" {{ 'checked' if not filters.troop_type_id }} onchange="this.form.submit()" hidden>Усі</label>
+        {% for tt in troop_types %}
+        <label class="chip {{ 'is-active' if filters.troop_type_id == tt.type_id }}">
+          <input type="radio" name="troop_type_id" value="{{ tt.type_id }}" {{ 'checked' if filters.troop_type_id == tt.type_id }} onchange="this.form.submit()" hidden>{{ tt.type_name }}</label>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </form>
 
 {% if view == 'table' %}
   <div class="table-wrap">
     <table class="brigades-table" id="brigades-table">
-      <thead><tr><th>№</th><th>Назва</th><th>Рід військ</th><th>Корпус</th><th>ППД</th><th style="text-align:right">Битв</th></tr></thead>
+      <thead><tr><th>№</th><th>Назва</th><th>Рід військ</th><th>Корпус</th><th>ППД</th><th>Рік заснування</th><th>Прапор</th></tr></thead>
       <tbody>
         {% for b in brigades %}
           {% if loop.first or b.branch_name != brigades[loop.index0 - 1].branch_name %}
-            <tr class="table-group"><td colspan="6">{{ b.branch_name or 'Без роду військ' }}</td></tr>
+            <tr class="table-group"><td colspan="7">{{ b.branch_name or 'Без роду військ' }}</td></tr>
           {% endif %}
           <tr class="brigade-row" data-name="{{ b.name|lower }}" onclick="location.href='/brigades/{{ b.brigade_id }}'">
-            <td><span class="emblem" style="width:32px;height:32px;font-size:12px">{{ b.name.split(' ')[0] if b.name else '—' }}</span></td>
+            <td><span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
+              {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
+            </span></td>
             <td class="cell-name"><b>{{ b.name }}</b>{% if b.callsign %}<small>{{ b.callsign }}</small>{% endif %}</td>
             <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
             <td>{{ b.corps_name or '—' }}</td>
             <td>{{ b.city_name or '—' }}</td>
-            <td class="num-mono">{{ b.battle_count if b.battle_count is defined else '—' }}</td>
+            <td class="num-mono">{{ b.formed_date[:4] if b.formed_date else '—' }}</td>
+            <td>
+              {% if b.flag_date %}
+                <span class="flag" title="Бойовий прапор ЗСУ вручено"><img src="/static/img/zsu-ensign.svg" alt=""></span>
+              {% else %}
+                <span class="flag flag--empty" title="Прапор не вручено"></span>
+              {% endif %}
+            </td>
           </tr>
         {% else %}
-          <tr><td colspan="6" class="empty">Нічого не знайдено.</td></tr>
+          <tr><td colspan="7" class="empty">Нічого не знайдено.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -90,7 +111,7 @@
       {% endif %}
       <a class="card brigade-row" data-name="{{ b.name|lower }}" href="/brigades/{{ b.brigade_id }}">
         <div class="card__head">
-          <span class="emblem">
+          <span class="emblem {{ 'has-image' if b.emblem_file }}">
             {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
           </span>
           <span class="card__title">
@@ -110,7 +131,7 @@
           <span class="stat-block" style="align-items:flex-end">
             <span style="height:16px;display:flex;align-items:center">
               {% if b.flag_date %}
-                <span class="flag" title="Бойовий прапор ЗСУ вручено"></span>
+                <span class="flag" title="Бойовий прапор ЗСУ вручено"><img src="/static/img/zsu-ensign.svg" alt=""></span>
               {% else %}
                 <span class="flag flag--empty" title="Прапор не вручено"></span>
               {% endif %}
