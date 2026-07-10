@@ -61,14 +61,14 @@
 
 {% if view == 'table' %}
   <div class="table-wrap">
-    <table class="brigades-table">
+    <table class="brigades-table" id="brigades-table">
       <thead><tr><th>№</th><th>Назва</th><th>Рід військ</th><th>Корпус</th><th>ППД</th><th style="text-align:right">Битв</th></tr></thead>
       <tbody>
         {% for b in brigades %}
           {% if loop.first or b.branch_name != brigades[loop.index0 - 1].branch_name %}
             <tr class="table-group"><td colspan="6">{{ b.branch_name or 'Без роду військ' }}</td></tr>
           {% endif %}
-          <tr onclick="location.href='/brigades/{{ b.brigade_id }}'">
+          <tr class="brigade-row" data-name="{{ b.name|lower }}" onclick="location.href='/brigades/{{ b.brigade_id }}'">
             <td><span class="emblem" style="width:32px;height:32px;font-size:12px">{{ b.name.split(' ')[0] if b.name else '—' }}</span></td>
             <td class="cell-name"><b>{{ b.name }}</b>{% if b.callsign %}<small>{{ b.callsign }}</small>{% endif %}</td>
             <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
@@ -83,12 +83,12 @@
     </table>
   </div>
 {% else %}
-  <div class="grid-cards">
+  <div class="grid-cards" id="brigades-cards">
     {% for b in brigades %}
       {% if loop.first or b.branch_name != brigades[loop.index0 - 1].branch_name %}
         <div class="divider"><span>{{ b.branch_name or 'Без роду військ' }}</span></div>
       {% endif %}
-      <a class="card" href="/brigades/{{ b.brigade_id }}">
+      <a class="card brigade-row" data-name="{{ b.name|lower }}" href="/brigades/{{ b.brigade_id }}">
         <div class="card__head">
           <span class="emblem">
             {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
@@ -125,5 +125,70 @@
   </div>
 {% endif %}
 
-<div class="result-count">Показано <b>{{ brigades|length }}</b></div>
+<div class="result-count" id="result-count">Показано <b id="result-count-num">{{ brigades|length }}</b></div>
+<div class="empty" id="live-search-empty" style="display:none">Нічого не знайдено за цим запитом.</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var inputs = [document.getElementById('search-desktop'), document.getElementById('search-mobile')].filter(Boolean);
+  var rows = document.querySelectorAll('.brigade-row');
+  var dividers = document.querySelectorAll('#brigades-cards > .divider');
+  var groupRows = document.querySelectorAll('#brigades-table .table-group');
+  var resultNum = document.getElementById('result-count-num');
+  var liveEmpty = document.getElementById('live-search-empty');
+
+  if (!inputs.length || !rows.length) return;
+
+  function normalize(s) {
+    return (s || '').trim().toLocaleLowerCase('uk');
+  }
+
+  function applyFilter(query) {
+    var q = normalize(query);
+    var visibleCount = 0;
+
+    rows.forEach(function (row) {
+      var words = row.dataset.name.split(/[\s-]+/);
+      var match = q === '' || words.some(function (w) { return w.startsWith(q); });
+      row.style.display = match ? '' : 'none';
+      if (match) visibleCount += 1;
+    });
+
+    // Ховаємо заголовки груп (рід військ), під якими не лишилось жодної видимої бригади.
+    [dividers, groupRows].forEach(function (headers) {
+      headers.forEach(function (header) {
+        var sibling = header.nextElementSibling;
+        var hasVisible = false;
+        while (sibling && !sibling.classList.contains('divider') && !sibling.classList.contains('table-group')) {
+          if (sibling.classList.contains('brigade-row') && sibling.style.display !== 'none') {
+            hasVisible = true;
+            break;
+          }
+          sibling = sibling.nextElementSibling;
+        }
+        header.style.display = hasVisible ? '' : 'none';
+      });
+    });
+
+    if (resultNum) resultNum.textContent = visibleCount;
+    if (liveEmpty) liveEmpty.style.display = visibleCount === 0 ? '' : 'none';
+  }
+
+  inputs.forEach(function (input) {
+    input.addEventListener('input', function (e) {
+      var value = e.target.value;
+      inputs.forEach(function (other) { if (other !== e.target) other.value = value; });
+      applyFilter(value);
+    });
+  });
+
+  document.querySelectorAll('form[data-live-search]').forEach(function (form) {
+    form.addEventListener('submit', function (e) { e.preventDefault(); });
+  });
+
+  applyFilter(inputs[0].value);
+})();
+</script>
 {% endblock %}

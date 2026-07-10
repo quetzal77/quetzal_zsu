@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import battles, brigades, equipment, locations, traditions
+from app.routers import battles, brigades, equipment, stats, traditions
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,7 +16,7 @@ app.include_router(brigades.router)
 app.include_router(battles.router)
 app.include_router(equipment.router)
 app.include_router(traditions.router)
-app.include_router(locations.router)
+app.include_router(stats.router)
 
 
 @app.get("/")

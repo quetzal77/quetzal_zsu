@@ -3,12 +3,19 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from app.database import get_db
+from app.templates import templates
 
 router = APIRouter(prefix="/brigades", tags=["brigades"])
-templates = Jinja2Templates(directory="app/templates")
+
+
+def _optional_int(value: Optional[str]) -> Optional[int]:
+    """HTML <select> sends "" for the "—" option; FastAPI's int parsing rejects
+    that before it reaches our code, so these fields must arrive as str."""
+    if value is None or value == "":
+        return None
+    return int(value)
 
 
 def _lookups(db: sqlite3.Connection) -> dict:
@@ -36,18 +43,27 @@ def _lookups(db: sqlite3.Connection) -> dict:
 @router.get("")
 def list_brigades(
     request: Request,
-    military_branch_id: Optional[int] = None,
-    corps_id: Optional[int] = None,
-    territorial_command_id: Optional[int] = None,
-    region_id: Optional[int] = None,
+    military_branch_id: Optional[str] = None,
+    corps_id: Optional[str] = None,
+    territorial_command_id: Optional[str] = None,
+    region_id: Optional[str] = None,
+    q: Optional[str] = None,
     db: sqlite3.Connection = Depends(get_db),
 ):
+    military_branch_id = _optional_int(military_branch_id)
+    corps_id = _optional_int(corps_id)
+    territorial_command_id = _optional_int(territorial_command_id)
+    region_id = _optional_int(region_id)
+
     query = """
-        SELECT b.brigade_id, b.name, mb.branch_name, ac.corps_name
+        SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date,
+               mb.branch_name, ac.corps_name, l.city_name,
+               COUNT(bb.battle_id) AS battle_count
         FROM brigades b
         LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
         LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
         LEFT JOIN locations l ON b.location_id = l.location_id
+        LEFT JOIN brigade_battles bb ON bb.brigade_id = b.brigade_id
         WHERE 1=1
     """
     params: list = []
@@ -63,7 +79,12 @@ def list_brigades(
     if region_id:
         query += " AND l.region_id = ?"
         params.append(region_id)
-    query += " ORDER BY b.name"
+    if q:
+        # ловимо збіг як на початку назви, так і на початку будь-якого
+        # окремого слова всередині неї (розділювачі — пробіл або дефіс)
+        query += " AND (b.name LIKE ? OR b.name LIKE ? OR b.name LIKE ?)"
+        params.extend([f"{q}%", f"% {q}%", f"%-{q}%"])
+    query += " GROUP BY b.brigade_id ORDER BY b.name"
 
     brigades = db.execute(query, params).fetchall()
     regions = db.execute("SELECT region_id, region_name FROM regions ORDER BY region_name").fetchall()
@@ -98,11 +119,11 @@ def new_brigade_form(request: Request, db: sqlite3.Connection = Depends(get_db))
 def create_brigade(
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    military_branch_id: Optional[int] = Form(None),
-    corps_id: Optional[int] = Form(None),
-    territorial_command_id: Optional[int] = Form(None),
-    troop_type_id: Optional[int] = Form(None),
-    location_id: Optional[int] = Form(None),
+    military_branch_id: Optional[str] = Form(None),
+    corps_id: Optional[str] = Form(None),
+    territorial_command_id: Optional[str] = Form(None),
+    troop_type_id: Optional[str] = Form(None),
+    location_id: Optional[str] = Form(None),
     formed_date: Optional[str] = Form(None),
     flag_date: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
@@ -115,11 +136,11 @@ def create_brigade(
         (
             name,
             description or None,
-            military_branch_id,
-            corps_id,
-            territorial_command_id,
-            troop_type_id,
-            location_id,
+            _optional_int(military_branch_id),
+            _optional_int(corps_id),
+            _optional_int(territorial_command_id),
+            _optional_int(troop_type_id),
+            _optional_int(location_id),
             formed_date or None,
             flag_date or None,
         ),
@@ -156,10 +177,27 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
         ).fetchone()[0],
     }
 
+    battles = db.execute(
+        """SELECT bt.battle_id, bt.name, bb.role
+           FROM brigade_battles bb
+           JOIN battles bt ON bb.battle_id = bt.battle_id
+           WHERE bb.brigade_id = ?
+           ORDER BY bt.start_date""",
+        (brigade_id,),
+    ).fetchall()
+
+    photos = db.execute(
+        """SELECT photo_id, file_path, position
+           FROM brigade_photos
+           WHERE brigade_id = ?
+           ORDER BY position""",
+        (brigade_id,),
+    ).fetchall()
+
     return templates.TemplateResponse(
         request,
         "brigade_detail.html",
-        {"brigade": brigade, "stats": stats},
+        {"brigade": brigade, "stats": stats, "battles": battles, "photos": photos},
     )
 
 
@@ -178,11 +216,11 @@ def update_brigade(
     brigade_id: int,
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    military_branch_id: Optional[int] = Form(None),
-    corps_id: Optional[int] = Form(None),
-    territorial_command_id: Optional[int] = Form(None),
-    troop_type_id: Optional[int] = Form(None),
-    location_id: Optional[int] = Form(None),
+    military_branch_id: Optional[str] = Form(None),
+    corps_id: Optional[str] = Form(None),
+    territorial_command_id: Optional[str] = Form(None),
+    troop_type_id: Optional[str] = Form(None),
+    location_id: Optional[str] = Form(None),
     formed_date: Optional[str] = Form(None),
     flag_date: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
@@ -196,11 +234,11 @@ def update_brigade(
         (
             name,
             description or None,
-            military_branch_id,
-            corps_id,
-            territorial_command_id,
-            troop_type_id,
-            location_id,
+            _optional_int(military_branch_id),
+            _optional_int(corps_id),
+            _optional_int(territorial_command_id),
+            _optional_int(troop_type_id),
+            _optional_int(location_id),
             formed_date or None,
             flag_date or None,
             brigade_id,

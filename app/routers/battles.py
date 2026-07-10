@@ -1,20 +1,28 @@
 import sqlite3
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.templating import Jinja2Templates
 
 from app.database import get_db
+from app.templates import templates
 
 router = APIRouter(prefix="/battles", tags=["battles"])
-templates = Jinja2Templates(directory="app/templates")
+
+
+def _battle_status(start_date, end_date):
+    if end_date:
+        return "завершено"
+    if start_date:
+        return "триває"
+    return None
 
 
 @router.get("")
 def list_battles(request: Request, db: sqlite3.Connection = Depends(get_db)):
     battles = db.execute(
-        """SELECT b.battle_id, b.name, b.start_date, b.end_date, l.city_name
+        """SELECT b.battle_id, b.name, b.start_date, b.end_date, b.description, l.city_name, r.region_name
            FROM battles b
            LEFT JOIN locations l ON b.location_id = l.location_id
+           LEFT JOIN regions r ON l.region_id = r.region_id
            ORDER BY b.start_date"""
     ).fetchall()
     return templates.TemplateResponse(request, "battles_list.html", {"battles": battles})
@@ -22,7 +30,7 @@ def list_battles(request: Request, db: sqlite3.Connection = Depends(get_db)):
 
 @router.get("/{battle_id}")
 def battle_detail(battle_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
-    battle = db.execute(
+    row = db.execute(
         """SELECT b.*, l.city_name, r.region_name
            FROM battles b
            LEFT JOIN locations l ON b.location_id = l.location_id
@@ -30,6 +38,9 @@ def battle_detail(battle_id: int, request: Request, db: sqlite3.Connection = Dep
            WHERE b.battle_id = ?""",
         (battle_id,),
     ).fetchone()
+    battle = dict(row) if row else None
+    if battle:
+        battle["status"] = _battle_status(battle["start_date"], battle["end_date"])
 
     brigades = db.execute(
         """SELECT br.brigade_id, br.name, bb.role

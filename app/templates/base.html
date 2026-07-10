@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Портал бригад ЗСУ{% endblock %}</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version() }}">
 </head>
 <body>
 {% set path = request.url.path %}
@@ -23,8 +23,8 @@
       <a href="/stats"      class="{{ 'is-active' if path.startswith('/stats') }}">Статистика</a>
     </nav>
     <div class="topbar__right">
-      <form class="search" method="get" action="/brigades">
-        <input name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…">
+      <form class="search" method="get" action="/brigades" data-live-search>
+        <input id="search-desktop" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
       </form>
       <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
       <button class="menu-toggle" type="button" aria-label="Меню"
@@ -37,8 +37,8 @@
     <a href="/equipment">Спорядження</a>
     <a href="/traditions">Традиції</a>
     <a href="/stats">Статистика</a>
-    <form class="search" method="get" action="/brigades">
-      <input name="q" placeholder="Пошук за назвою / №…">
+    <form class="search" method="get" action="/brigades" data-live-search>
+      <input id="search-mobile" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
     </form>
     <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
   </div>
@@ -52,5 +52,6 @@
     <span class="mono">FastAPI · SQLite</span>
   </footer>
 </main>
+{% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,12 +1,11 @@
 import sqlite3
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.templating import Jinja2Templates
 
 from app.database import get_db
+from app.templates import templates
 
 router = APIRouter(prefix="/traditions", tags=["traditions"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("")
