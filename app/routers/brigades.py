@@ -59,7 +59,13 @@ def list_brigades(
 
     query = """
         SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date,
-               mb.branch_name, ac.corps_name, l.city_name
+               mb.branch_name, ac.corps_name, l.city_name,
+               (
+                   SELECT bt.unit_name
+                   FROM brigade_traditions bt
+                   WHERE bt.brigade_id = b.brigade_id
+                     AND bt.tradition_id = 3
+               ) AS honorific_name
         FROM brigades b
         LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
         LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
@@ -159,7 +165,13 @@ def create_brigade(
 def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     brigade = db.execute(
         """SELECT b.*, mb.branch_name, ac.corps_name, tc.command_name, tt.type_name,
-                  l.city_name, r.region_name
+                  l.city_name, r.region_name,
+                  (
+                      SELECT bt.unit_name
+                      FROM brigade_traditions bt
+                      WHERE bt.brigade_id = b.brigade_id
+                        AND bt.tradition_id = 3
+                  ) AS honorific_name
            FROM brigades b
            LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
            LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
@@ -171,24 +183,21 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
         (brigade_id,),
     ).fetchone()
 
-    stats = {
-        "battles": db.execute(
-            "SELECT COUNT(*) FROM brigade_battles WHERE brigade_id = ?", (brigade_id,)
-        ).fetchone()[0],
-        "equipment": db.execute(
-            "SELECT COUNT(*) FROM brigade_equipment WHERE brigade_id = ?", (brigade_id,)
-        ).fetchone()[0],
-        "traditions": db.execute(
-            "SELECT COUNT(*) FROM brigade_traditions WHERE brigade_id = ?", (brigade_id,)
-        ).fetchone()[0],
-    }
-
     battles = db.execute(
         """SELECT bt.battle_id, bt.name
            FROM brigade_battles bb
            JOIN battles bt ON bb.battle_id = bt.battle_id
            WHERE bb.brigade_id = ?
            ORDER BY bt.start_date""",
+        (brigade_id,),
+    ).fetchall()
+
+    equipment = db.execute(
+        """SELECT e.equipment_id, e.name, e.description
+           FROM brigade_equipment be
+           JOIN equipment e ON be.equipment_id = e.equipment_id
+           WHERE be.brigade_id = ?
+           ORDER BY e.name""",
         (brigade_id,),
     ).fetchall()
 
@@ -203,7 +212,7 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
     return templates.TemplateResponse(
         request,
         "brigade_detail.html",
-        {"brigade": brigade, "stats": stats, "battles": battles, "photos": photos},
+        {"brigade": brigade, "battles": battles, "equipment": equipment, "photos": photos},
     )
 
 

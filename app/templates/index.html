@@ -117,6 +117,7 @@
           </span>
           <span class="card__title">
             <span class="card__name">{{ b.name }}</span>
+            {% if b.honorific_name %}<span class="card__honorific">{{ b.honorific_name }}</span>{% endif %}
             {% if b.callsign %}<span class="card__sub">{{ b.callsign }}</span>{% endif %}
           </span>
         </div>
@@ -163,6 +164,34 @@
 
   if (!inputs.length || !rows.length) return;
 
+  function alignCardHeadings() {
+    var cards = Array.from(document.querySelectorAll('#brigades-cards .brigade-row'));
+    var rowGroups = new Map();
+
+    cards.forEach(function (card) {
+      var heading = card.querySelector('.card__head');
+      if (heading) heading.style.minHeight = '';
+    });
+
+    cards.forEach(function (card) {
+      if (card.style.display === 'none') return;
+      var heading = card.querySelector('.card__head');
+      if (!heading) return;
+      var row = rowGroups.get(card.offsetTop) || [];
+      row.push(heading);
+      rowGroups.set(card.offsetTop, row);
+    });
+
+    rowGroups.forEach(function (headings) {
+      var maxHeight = Math.max.apply(null, headings.map(function (heading) {
+        return heading.offsetHeight;
+      }));
+      headings.forEach(function (heading) {
+        heading.style.minHeight = maxHeight + 'px';
+      });
+    });
+  }
+
   function normalize(s) {
     return (s || '').trim().toLocaleLowerCase('uk');
   }
@@ -196,6 +225,7 @@
 
     if (resultNum) resultNum.textContent = visibleCount;
     if (liveEmpty) liveEmpty.style.display = visibleCount === 0 ? '' : 'none';
+    requestAnimationFrame(alignCardHeadings);
   }
 
   inputs.forEach(function (input) {
@@ -211,6 +241,9 @@
   });
 
   applyFilter(inputs[0].value);
+  window.addEventListener('resize', function () {
+    requestAnimationFrame(alignCardHeadings);
+  });
 })();
 </script>
 {% endblock %}
