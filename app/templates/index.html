@@ -18,6 +18,7 @@
       <button type="submit" name="view" value="cards" class="{{ 'is-active' if view != 'table' }}">▦ Картки</button>
       <button type="submit" name="view" value="table" class="{{ 'is-active' if view == 'table' }}">☰ Таблиця</button>
     </div>
+    <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
   </div>
 
   <div class="filters {{ 'is-hidden' if not has_filters }}" id="filters">

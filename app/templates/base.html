@@ -27,7 +27,6 @@
       <form class="search" method="get" action="/brigades" data-live-search>
         <input id="search-desktop" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
       </form>
-      <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
       <button class="menu-toggle" type="button" aria-label="Меню"
               onclick="document.getElementById('mmenu').classList.toggle('is-open')">☰</button>
     </div>
@@ -41,7 +40,6 @@
     <form class="search" method="get" action="/brigades" data-live-search>
       <input id="search-mobile" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
     </form>
-    <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
   </div>
 </header>
 
