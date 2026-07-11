@@ -229,6 +229,7 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 /* with photo: body does NOT grow — only as tall as title + 3-line desc */
 .tradition-card.has-photo .tradition-card__body { flex: 0 0 auto; }
 .tradition-card__title { flex: none; color: var(--ink); font-weight: 700; font-size: 15px; line-height: 1.25; }
+.tradition-card__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; /* обмежити до 2 рядків (WebKit) */ overflow: hidden; text-overflow: ellipsis; line-height: 1.25; max-height: 2.5em; /* запас для 2 рядків при line-height:1.25 */ word-break: break-word; }
 /* no photo: description fills remaining body height */
 .tradition-card__desc { flex: 1; color: var(--muted); font-size: 12px; margin-top: 4px; overflow: hidden; line-height: 1.5; }
 /* with photo: clamp to 3 lines, don't grow */
