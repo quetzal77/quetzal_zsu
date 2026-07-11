@@ -184,7 +184,7 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
     }
 
     battles = db.execute(
-        """SELECT bt.battle_id, bt.name, bb.role
+        """SELECT bt.battle_id, bt.name
            FROM brigade_battles bb
            JOIN battles bt ON bb.battle_id = bt.battle_id
            WHERE bb.brigade_id = ?

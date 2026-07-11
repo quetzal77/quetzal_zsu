@@ -47,8 +47,8 @@
       <div class="panel__head">Бойовий шлях</div>
       {% for bt in battles %}
         <a class="list-row" href="/battles/{{ bt.battle_id }}">
-          <span style="display:flex;align-items:center;gap:12px;min-width:0"><span class="dot"></span><span style="color:var(--text)">{{ bt.name }}</span></span>
-          <span class="role">{{ bt.role or 'Учасник' }}</span>
+          <span style="display:flex;align-items:center;gap:12px;min-width:0"><span class="dot"></span>
+            <span style="color:var(--text)">{{ bt.name }}</span></span>
         </a>
       {% endfor %}
     </div>
