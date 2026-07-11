@@ -34,6 +34,21 @@
       </dl>
     </div>
 
+
+      {% if traditions %}
+      <div class="panel">
+          <div class="panel__head">Традиції</div>
+          {% for tr in traditions %}
+          <div class="list-row">
+      <span style="display:flex;align-items:center;gap:12px;min-width:0">
+        <span class="dot"></span>
+        <span style="color:var(--text)">{{ tr.title }}</span>
+      </span>
+          </div>
+          {% endfor %}
+      </div>
+      {% endif %}
+
     {% if battles %}
     <div class="panel">
       <div class="panel__head">Бойовий шлях</div>
@@ -57,20 +72,6 @@
       {% endfor %}
     </div>
     {% endif %}
-
-      {% if traditions %}
-      <div class="panel">
-          <div class="panel__head">Традиції</div>
-          {% for tr in traditions %}
-          <div class="list-row">
-      <span style="display:flex;align-items:center;gap:12px;min-width:0">
-        <span class="dot"></span>
-        <span style="color:var(--text)">{{ tr.title }}</span>
-      </span>
-          </div>
-          {% endfor %}
-      </div>
-      {% endif %}
   </div>
 
   <div style="display:flex;flex-direction:column;gap:24px">
