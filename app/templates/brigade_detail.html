@@ -39,7 +39,9 @@
   <div style="display:flex;flex-direction:column;gap:24px">
     <div class="panel">
       <div class="panel__head">Опис</div>
-      <div class="panel__body" style="color:var(--text);font-size:14px;line-height:1.6">{{ brigade.description or '—' }}</div>
+      <div class="panel__body" style="color:var(--text);font-size:14px;line-height:1.6">
+          {{ brigade.description | safe }}
+      </div>
     </div>
 
     {% if battles %}

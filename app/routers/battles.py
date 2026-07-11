@@ -43,7 +43,7 @@ def battle_detail(battle_id: int, request: Request, db: sqlite3.Connection = Dep
         battle["status"] = _battle_status(battle["start_date"], battle["end_date"])
 
     brigades = db.execute(
-        """SELECT br.brigade_id, br.name, bb.role
+        """SELECT br.brigade_id, br.name
            FROM brigade_battles bb
            JOIN brigades br ON bb.brigade_id = br.brigade_id
            WHERE bb.battle_id = ?
