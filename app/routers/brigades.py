@@ -209,10 +209,19 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
         (brigade_id,),
     ).fetchall()
 
+    traditions = db.execute(
+        """SELECT t.tradition_id, t.title, t.description, bt.unit_name, bt.date_assigned
+        FROM brigade_traditions bt
+        JOIN traditions t ON t.tradition_id = bt.tradition_id
+        WHERE bt.brigade_id = ?
+        ORDER BY t.title""",
+        (brigade_id,)
+    ).fetchall()
+
     return templates.TemplateResponse(
         request,
         "brigade_detail.html",
-        {"brigade": brigade, "battles": battles, "equipment": equipment, "photos": photos},
+        {"brigade": brigade, "battles": battles, "equipment": equipment, "photos": photos, "traditions": traditions},
     )
 
 
