@@ -85,7 +85,20 @@
             <td><span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
               {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
             </span></td>
-            <td class="cell-name"><b>{{ b.name }}</b>{% if b.callsign %}<small>{{ b.callsign }}</small>{% endif %}</td>
+            <td class="cell-name">
+                <b>{{ b.name }}</b>
+                {% if b.callsign %}
+                <small>{{ b.callsign }}</small>
+                {% endif %}
+
+                {% if b.honorific_name %}
+                <div class="honorific-inline">
+                    <span class="honorific-badge card__honorific" title="{{ b.honorific_name }}">
+                        {{ b.honorific_name_short or b.honorific_name }}
+                    </span>
+                </div>
+                {% endif %}
+            </td>
             <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
             <td>{{ b.corps_name or '—' }}</td>
             <td>{{ b.city_name or '—' }}</td>
