@@ -22,6 +22,13 @@
       <textarea id="description" name="description" rows="4"
                 placeholder="Короткий опис традиції…">{{ tradition.description if tradition else '' }}</textarea>
     </div>
+
+    <div class="field field--wide">
+        <label for="photo">Фото (URL)</label>
+        <input id="photo" name="photo"
+               value="{{ tradition.photo if tradition else '' }}"
+               placeholder="Додай шлях до фото">
+    </div>
   </div>
 
   {# ── Секція бригад (тільки при редагуванні) ── #}

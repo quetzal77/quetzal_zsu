@@ -44,11 +44,12 @@ def new_tradition_form(request: Request, db: sqlite3.Connection = Depends(get_db
 def create_tradition(
     title: str = Form(...),
     description: Optional[str] = Form(None),
+    photo: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
 ):
     cur = db.execute(
-        "INSERT INTO traditions (title, description) VALUES (?, ?)",
-        (title, description or None),
+        "INSERT INTO traditions (title, description, photo) VALUES (?, ?, ?)",
+        (title, description or None, photo or None),
     )
     db.commit()
     return RedirectResponse(url=f"/traditions/{cur.lastrowid}/edit", status_code=303)
@@ -114,12 +115,13 @@ def update_tradition(
     tradition_id: int,
     title: str = Form(...),
     description: Optional[str] = Form(None),
+    photo: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
 ):
     db.execute(
-        """UPDATE traditions SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+        """UPDATE traditions SET title = ?, description = ?, photo = ?, updated_at = CURRENT_TIMESTAMP
            WHERE tradition_id = ?""",
-        (title, description or None, tradition_id),
+        (title, description or None, photo or None, tradition_id),
     )
     db.commit()
     return RedirectResponse(url="/traditions", status_code=303)
