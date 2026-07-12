@@ -132,13 +132,35 @@ def add_brigade_to_tradition(
     tradition_id: int,
     brigade_id: int = Form(...),
     date_assigned: Optional[str] = Form(None),
+    unit_name: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
 ):
-    db.execute(
-        """INSERT OR IGNORE INTO brigade_traditions (brigade_id, tradition_id, date_assigned)
-           VALUES (?, ?, ?)""",
-        (brigade_id, tradition_id, date_assigned or None),
-    )
+    # 1. Завантажуємо традицію з БД
+    tradition = db.execute(
+        "SELECT * FROM traditions WHERE tradition_id = ?",
+        (tradition_id,)
+    ).fetchone()
+
+    # 2. Перевіряємо флаг is_honorific
+    is_honorific = tradition["is_honorific"] == 1
+
+    # 3. Вставляємо дані залежно від типу традиції
+    if is_honorific:
+        db.execute(
+            """
+            INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned, unit_name)
+            VALUES (?, ?, ?, ?)
+            """,
+            (brigade_id, tradition_id, date_assigned, unit_name),
+        )
+    else:
+        db.execute(
+            """
+            INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned)
+            VALUES (?, ?, ?)
+            """,
+            (brigade_id, tradition_id, date_assigned),
+        )
     db.commit()
     return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)
 

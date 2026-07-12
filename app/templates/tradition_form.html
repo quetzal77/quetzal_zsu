@@ -52,6 +52,16 @@
                  placeholder="РРРР-ММ-ДД" form="add-brigade-form">
         </div>
       </div>
+        {% if tradition and tradition.is_honorific %}
+        <div class="form-grid" style="margin-top:12px;gap:14px 20px">
+            <div class="field field--wide">
+                <label for="unit_name">Почесне ім’я бригади</label>
+                <input id="unit_name" name="unit_name"
+                       form="add-brigade-form"
+                       placeholder="напр. Таврійська">
+            </div>
+        </div>
+        {% endif %}
       <div style="margin-top:10px">
         <button type="submit" form="add-brigade-form" class="btn-outline">+ Додати до списку</button>
       </div>

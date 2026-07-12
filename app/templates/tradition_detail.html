@@ -29,7 +29,9 @@
         <thead>
           <tr>
             <th>Назва бригади</th>
-            <th>Почесне ім'я</th>
+            {% if tradition.is_honorific %}
+                <th>Почесне ім'я</th>
+            {% endif %}
             <th>Дата присвоєння</th>
             <th>Рід військ</th>
           </tr>
@@ -38,7 +40,9 @@
           {% for b in brigades %}
             <tr onclick="location.href='/brigades/{{ b.brigade_id }}'">
               <td class="cell-name"><b>{{ b.name }}</b></td>
-              <td><span class="honorific-badge card__honorific">{{ b.unit_name or '—' }}</span></td>
+              {% if tradition.is_honorific %}
+                <td><span class="honorific-badge card__honorific">{{ b.unit_name or '—' }}</span></td>
+              {% endif %}
               <td class="mono">{{ b.date_assigned or '—' }}</td>
               <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
             </tr>
