@@ -227,17 +227,20 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
 
 @router.post("/{brigade_id}/edit")
 def update_brigade(
-    brigade_id: int,
-    name: str = Form(...),
-    description: Optional[str] = Form(None),
-    military_branch_id: Optional[str] = Form(None),
-    corps_id: Optional[str] = Form(None),
-    territorial_command_id: Optional[str] = Form(None),
-    troop_type_id: Optional[str] = Form(None),
-    location_id: Optional[str] = Form(None),
-    formed_date: Optional[str] = Form(None),
-    flag_date: Optional[str] = Form(None),
-    db: sqlite3.Connection = Depends(get_db),
+        brigade_id: int,
+        name: str = Form(...),
+        description: Optional[str] = Form(None),
+        military_branch_id: Optional[str] = Form(None),
+        corps_id: Optional[str] = Form(None),
+        territorial_command_id: Optional[str] = Form(None),
+        troop_type_id: Optional[str] = Form(None),
+        location_id: Optional[str] = Form(None),
+        formed_date: Optional[str] = Form(None),
+        flag_date: Optional[str] = Form(None),
+        photo_0: Optional[str] = Form(None),
+        photo_1: Optional[str] = Form(None),
+        photo_2: Optional[str] = Form(None),
+        db: sqlite3.Connection = Depends(get_db),
 ):
     db.execute(
         """UPDATE brigades SET
@@ -258,8 +261,45 @@ def update_brigade(
             brigade_id,
         ),
     )
+
+    photos = [photo_0, photo_1, photo_2]
+
+    existing = db.execute(
+        """SELECT photo_id, file_path, position
+           FROM brigade_photos
+           WHERE brigade_id = ?
+           ORDER BY position""",
+        (brigade_id,),
+    ).fetchall()
+
+    for idx in range(3):
+        new_path = photos[idx] or ""
+        position = idx + 1  # ← 1, 2, 3 замість 0, 1, 2
+
+        if new_path:
+            if idx < len(existing):
+                db.execute(
+                    """UPDATE brigade_photos
+                       SET file_path = ?, position = ?
+                       WHERE photo_id = ?""",
+                    (new_path, position, existing[idx][0]),
+                )
+            else:
+                db.execute(
+                    """INSERT INTO brigade_photos (brigade_id, file_path, position)
+                       VALUES (?, ?, ?)""",
+                    (brigade_id, new_path, position),
+                )
+        else:
+            if idx < len(existing):
+                db.execute(
+                    "DELETE FROM brigade_photos WHERE photo_id = ?",
+                    (existing[idx][0],),
+                )
+
     db.commit()
     return RedirectResponse(url=f"/brigades/{brigade_id}", status_code=303)
+
 
 
 @router.get("/{brigade_id}/edit")
