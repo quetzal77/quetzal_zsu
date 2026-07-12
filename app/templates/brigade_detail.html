@@ -40,10 +40,17 @@
           <div class="panel__head">Традиції</div>
           {% for tr in traditions %}
           <div class="list-row">
-      <span style="display:flex;align-items:center;gap:12px;min-width:0">
-        <span class="dot"></span>
-        <span style="color:var(--text)">{{ tr.title }}</span>
-      </span>
+              <span style="display:flex;align-items:center;gap:12px;min-width:0">
+                <span class="dot"></span>
+                    {% if tr.title == "Почесне найменування частини" %}
+                        <span style="color:var(--text)">Почесне найменування частини</span>
+                        <span class="honorific-badge card__honorific">
+                            {{ brigade.honorific_name }}
+                        </span>
+                    {% else %}
+                        <span style="color:var(--text)">{{ tr.title }}</span>
+                    {% endif %}
+              </span>
           </div>
           {% endfor %}
       </div>

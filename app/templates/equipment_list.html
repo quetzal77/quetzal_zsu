@@ -7,7 +7,7 @@
 <div class="catalog-grid">
   {% for e in equipment %}
     <div class="panel" style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-      <div>
+      <div style="flex-grow:1">
         <div style="color:var(--ink);font-weight:700;font-size:15px;line-height:1.25">{{ e.name }}</div>
         {% if e.description %}<div style="color:var(--muted);font-size:12px;margin-top:3px">{{ e.description }}</div>{% endif %}
       </div>
