@@ -225,16 +225,6 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
     )
 
 
-@router.get("/{brigade_id}/edit")
-def edit_brigade_form(brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
-    brigade = db.execute("SELECT * FROM brigades WHERE brigade_id = ?", (brigade_id,)).fetchone()
-    return templates.TemplateResponse(
-        request,
-        "brigade_form.html",
-        {"brigade": brigade, **_lookups(db)},
-    )
-
-
 @router.post("/{brigade_id}/edit")
 def update_brigade(
     brigade_id: int,
@@ -270,3 +260,39 @@ def update_brigade(
     )
     db.commit()
     return RedirectResponse(url=f"/brigades/{brigade_id}", status_code=303)
+
+
+@router.get("/{brigade_id}/edit")
+def edit_brigade_form( brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    brigade = db.execute(
+        "SELECT * FROM brigades WHERE brigade_id = ?",
+        (brigade_id,),
+    ).fetchone()
+
+    raw_photos = db.execute(
+        """SELECT photo_id, brigade_id, file_path, position
+           FROM brigade_photos
+           WHERE brigade_id = ?
+           ORDER BY position""",
+        (brigade_id,),
+    ).fetchall()
+
+    photos = [
+        {
+            "photo_id": row[0],
+            "brigade_id": row[1],
+            "file_path": row[2],
+            "position": row[3],
+        }
+        for row in raw_photos
+    ]
+
+    return templates.TemplateResponse(
+        request,
+        "brigade_form.html",
+        {
+            "brigade": brigade,
+            "photos": photos,
+            **_lookups(db),
+        },
+    )
