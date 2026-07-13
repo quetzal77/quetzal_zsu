@@ -20,6 +20,35 @@ def _battle_status(start_date, end_date):
     return None
 
 
+_MONTHS_UK = ["січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру"]
+
+
+def _format_period(start_date: Optional[str], end_date: Optional[str]) -> str:
+    """Coarse "лют – кві 2022"-style range for the timeline widget; falls back to
+    raw ISO dates if either value isn't a well-formed YYYY-MM-DD string."""
+    def parse(d):
+        if not d:
+            return None
+        try:
+            y, m, _ = d.split("-")
+            return int(y), int(m)
+        except ValueError:
+            return None
+
+    s, e = parse(start_date), parse(end_date)
+    if s is None and e is None:
+        return start_date or end_date or ""
+    if s is None:
+        return f"{_MONTHS_UK[e[1] - 1]} {e[0]}"
+    if e is None:
+        return f"{_MONTHS_UK[s[1] - 1]} {s[0]}"
+    if s[0] == e[0] and s[1] == e[1]:
+        return f"{_MONTHS_UK[s[1] - 1]} {s[0]}"
+    if s[0] == e[0]:
+        return f"{_MONTHS_UK[s[1] - 1]} – {_MONTHS_UK[e[1] - 1]} {s[0]}"
+    return f"{_MONTHS_UK[s[1] - 1]} {s[0]} – {_MONTHS_UK[e[1] - 1]} {e[0]}"
+
+
 def _optional_int(value: Optional[str]) -> Optional[int]:
     """HTML <select> sends "" for the "—" option; FastAPI's int parsing rejects
     that before it reaches our code, so these fields must arrive as str."""
@@ -48,13 +77,22 @@ def _all_brigades(db: sqlite3.Connection):
 
 @router.get("")
 def list_battles(request: Request, db: sqlite3.Connection = Depends(get_db)):
-    battles = db.execute(
+    rows = db.execute(
         """SELECT b.battle_id, b.name, b.start_date, b.end_date, b.description, l.city_name, r.region_name
            FROM battles b
            LEFT JOIN locations l ON b.location_id = l.location_id
            LEFT JOIN regions r ON l.region_id = r.region_id
            ORDER BY b.start_date"""
     ).fetchall()
+
+    battles = []
+    for r in rows:
+        battle = dict(r)
+        battle["status"] = _battle_status(r["start_date"], r["end_date"])
+        battle["period"] = _format_period(r["start_date"], r["end_date"])
+        battle["year"] = r["start_date"][:4] if r["start_date"] else None
+        battles.append(battle)
+
     return templates.TemplateResponse(request, "battles_list.html", {"battles": battles})
 
 

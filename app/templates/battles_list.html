@@ -9,8 +9,28 @@
 </div>
 {% endif %}
 
+{% if battles %}
+<div class="timeline">
+  <div class="timeline__track">
+    {% for b in battles %}
+      <a class="timeline__node {{ 'is-active' if b.status == 'триває' }}" href="/battles/{{ b.battle_id }}">
+        <div class="line">
+          <span class="diamond"></span>
+          <span class="bar"></span>
+        </div>
+        <div class="period">{{ b.period }}</div>
+        <div class="name">{{ b.name }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <div class="grid-cards">
   {% for b in battles %}
+    {% if loop.first or b.year != battles[loop.index0 - 1].year %}
+      <div class="divider"><span>{{ b.year or 'Без дати' }}</span></div>
+    {% endif %}
     <a class="card" href="/battles/{{ b.battle_id }}">
       <div class="card__head">
         <span class="card__title">

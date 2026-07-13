@@ -215,6 +215,9 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .timeline__node .period { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 14px; }
 .timeline__node .name { margin-top: 5px; font-size: 14px; font-weight: 600; color: var(--muted); line-height: 1.25; }
 .timeline__node.is-active .name { font-weight: 700; color: var(--ink); }
+a.timeline__node { display: block; color: inherit; cursor: pointer; }
+a.timeline__node:hover .diamond { border-color: var(--green); }
+a.timeline__node:hover .name { color: var(--ink); }
 
 .status { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; padding: 4px 10px; border-radius: 2px; }
 .status--win { color: #03815B; background: #E6F4EE; }
@@ -262,4 +265,5 @@ footer .mono { font-family: var(--mono); }
   .mobile-menu.is-open { display: block; }
   main { padding: 24px 16px 64px; }
   .cols-2 { grid-template-columns: 1fr; }
+  .timeline__node { min-width: 140px; }
 }
