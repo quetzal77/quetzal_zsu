@@ -28,7 +28,7 @@ function Get-PythonCommand {
 }
 
 function Test-Dependencies($Python) {
-    $checkScript = "import importlib.util as u, sys; mods=['fastapi','uvicorn','jinja2','multipart']; missing=[m for m in mods if u.find_spec(m) is None]; sys.exit(1 if missing else 0)"
+    $checkScript = "import importlib.util as u, sys; mods=['fastapi','uvicorn','jinja2','multipart','itsdangerous','nh3']; missing=[m for m in mods if u.find_spec(m) is None]; sys.exit(1 if missing else 0)"
     & $Python -c $checkScript
     return ($LASTEXITCODE -eq 0)
 }
