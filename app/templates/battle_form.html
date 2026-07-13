@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{% if battle %}Редагування битви{% else %}Нова битва{% endif %} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="{% if battle %}/battles/{{ battle.battle_id }}{% else %}/battles{% endif %}">← Скасувати</a>
+<div class="page-eyebrow" style="margin-bottom:8px">{% if battle %}Редагування{% else %}Новий запис{% endif %}</div>
+<h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">
+  {% if battle %}Редагування: {{ battle.name }}{% else %}Нова битва{% endif %}
+</h1>
+
+<form id="main-form" class="brigade-form" method="post"
+      action="{% if battle %}/battles/{{ battle.battle_id }}/edit{% else %}/battles/new{% endif %}">
+  <div class="form-grid">
+    <div class="field field--wide">
+      <label for="name">Назва битви *</label>
+      <input id="name" name="name" required value="{{ battle.name if battle else '' }}"
+             placeholder="напр. Битва за Бахмут">
+    </div>
+    <div class="field field--wide">
+      <label for="description">Опис</label>
+      <textarea id="description" name="description" rows="4"
+                placeholder="Опис перебігу битви…">{{ battle.description or '' }}</textarea>
+    </div>
+
+    <div class="field">
+      <label for="location_id">Місце</label>
+      <select id="location_id" name="location_id">
+        <option value="">—</option>
+        {% for l in locations %}
+        <option value="{{ l.location_id }}" {{ 'selected' if battle and battle.location_id == l.location_id }}>{{ l.city_name }}, {{ l.region_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="start_date">Початок (РРРР-ММ-ДД)</label>
+      <input id="start_date" name="start_date" class="mono" value="{{ battle.start_date or '' }}" placeholder="РРРР-ММ-ДД">
+    </div>
+    <div class="field">
+      <label for="end_date">Кінець (РРРР-ММ-ДД)</label>
+      <input id="end_date" name="end_date" class="mono" value="{{ battle.end_date or '' }}" placeholder="РРРР-ММ-ДД">
+    </div>
+  </div>
+
+  {# ── Секція бригад-учасниць (тільки при редагуванні) ── #}
+  {% if battle %}
+
+    {% if all_brigades %}
+      <div class="form-grid" style="margin-top:24px;gap:14px 20px">
+        <div class="field">
+          <label for="brigade_id">Обрати бригаду</label>
+          <select id="brigade_id" name="brigade_id" form="add-brigade-form" required>
+            <option value="">— обрати —</option>
+            {% for b in all_brigades %}
+              <option value="{{ b.brigade_id }}">{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button type="submit" form="add-brigade-form" class="btn-outline">+ Додати до списку</button>
+      </div>
+    {% endif %}
+
+    {% if brigades %}
+      <div style="margin-top:24px;margin-bottom:8px;color:var(--faint);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700">
+        Бригади-учасниці
+      </div>
+      <div class="panel" style="margin-bottom:8px">
+        {% for b in brigades %}
+          <div class="list-row">
+            <span style="min-width:0;overflow:hidden">
+              <span style="color:var(--ink);font-weight:600;font-size:14px">{{ b.name }}</span>
+            </span>
+            <button type="submit" form="remove-{{ b.brigade_id }}"
+                    class="btn-ghost"
+                    style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
+                    onclick="return confirm('Прибрати цю бригаду з битви?')">✕</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% elif not all_brigades %}
+      {# all_brigades empty AND brigades empty — all assigned #}
+    {% else %}
+      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодна бригада ще не додана.</div>
+    {% endif %}
+
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" form="main-form" class="btn-primary">
+      {% if battle %}Зберегти зміни{% else %}Створити битву{% endif %}
+    </button>
+    <a class="btn-ghost" href="{% if battle %}/battles/{{ battle.battle_id }}{% else %}/battles{% endif %}">Скасувати</a>
+  </div>
+</form>
+
+{# ── Прихована форма для додавання бригади + форми видалення ── #}
+{% if battle %}
+  <form id="add-brigade-form" method="post"
+        action="/battles/{{ battle.battle_id }}/brigades"
+        style="display:none"></form>
+
+  {% for b in brigades %}
+    <form id="remove-{{ b.brigade_id }}" method="post"
+          action="/battles/{{ battle.battle_id }}/brigades/{{ b.brigade_id }}/remove"
+          style="display:none"></form>
+  {% endfor %}
+{% endif %}
+{% endblock %}

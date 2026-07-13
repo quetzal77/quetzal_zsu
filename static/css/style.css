@@ -185,7 +185,6 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .list-row--with-photo { flex-direction: column; align-items: stretch; }
 .list-row--with-photo img { width: 50%; height: auto; border-radius: 4px; display: block; align-self: center; }
 .list-row .dot { width: 6px; height: 6px; background: var(--green); flex: none; transform: rotate(45deg); }
-.role { flex: none; font-size: 10.5px; color: var(--accent-text); text-transform: uppercase; letter-spacing: 0.06em; background: var(--tint-bg); padding: 3px 9px; border-radius: 2px; }
 .chip-list { display: flex; flex-wrap: wrap; gap: 7px; }
 .gallery { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 12px; }
 .gallery .slot { aspect-ratio: 16/10; background: var(--line-3); border: 1px dashed var(--input); border-radius: 4px; display: grid; place-items: center; color: var(--ghost); font-size: 12px; overflow: hidden; }

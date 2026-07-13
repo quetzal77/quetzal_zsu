@@ -134,7 +134,6 @@ CREATE INDEX idx_brigades_location_id ON brigades (location_id);
 CREATE TABLE brigade_battles (
     brigade_id   INTEGER NOT NULL REFERENCES brigades (brigade_id),
     battle_id    INTEGER NOT NULL REFERENCES battles (battle_id),
-    role         TEXT,
     created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (brigade_id, battle_id)
 );

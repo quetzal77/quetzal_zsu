@@ -3,6 +3,12 @@
 {% block content %}
 <div class="page-eyebrow">Хронологія битв</div>
 
+{% if request.session.get('username') %}
+<div class="toolbar" style="justify-content:flex-end;margin-bottom:20px">
+  <a class="btn-primary" href="/battles/new">＋ Додати битву</a>
+</div>
+{% endif %}
+
 <div class="grid-cards">
   {% for b in battles %}
     <a class="card" href="/battles/{{ b.battle_id }}">
@@ -13,7 +19,7 @@
         </span>
       </div>
       {% if b.city_name %}<div class="tags"><span class="tag">◈ {{ b.city_name }}{% if b.region_name %}, {{ b.region_name }}{% endif %}</span></div>{% endif %}
-      {% if b.description %}<div style="color:var(--muted);font-size:13px;line-height:1.5">{{ b.description|truncate(120) }}</div>{% endif %}
+      {% if b.description %}<div style="color:var(--muted);font-size:13px;line-height:1.5">{{ b.description|striptags|truncate(120) }}</div>{% endif %}
     </a>
   {% else %}
     <div class="empty" style="grid-column:1/-1">Битви ще не додані.</div>
