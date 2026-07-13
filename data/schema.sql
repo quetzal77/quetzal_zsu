@@ -4,6 +4,17 @@
 PRAGMA foreign_keys = ON;
 
 -- ---------------------------------------------------------------------
+-- Auth
+-- ---------------------------------------------------------------------
+
+CREATE TABLE users (
+    user_id        INTEGER PRIMARY KEY,
+    username       TEXT NOT NULL UNIQUE,
+    password_hash  TEXT NOT NULL,
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ---------------------------------------------------------------------
 -- Lookup tables
 -- ---------------------------------------------------------------------
 
@@ -55,6 +66,7 @@ CREATE TABLE traditions (
     title          TEXT NOT NULL UNIQUE,
     description    TEXT,
     photo          TEXT,
+    is_honorific   INTEGER NOT NULL DEFAULT 0, -- controls whether brigade_traditions.unit_name is shown for this tradition
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

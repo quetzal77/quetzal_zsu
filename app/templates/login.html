@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Вхід — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+<div class="page-eyebrow">Вхід</div>
+<h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">Увійти в портал</h1>
+
+<form class="brigade-form" method="post" action="/login" style="max-width:360px">
+  <input type="hidden" name="next" value="{{ next }}">
+
+  {% if error %}
+  <div class="empty" style="margin-bottom:16px;color:#B3261E">{{ error }}</div>
+  {% endif %}
+
+  <div class="form-grid">
+    <div class="field field--wide">
+      <label for="username">Логін</label>
+      <input id="username" name="username" required autofocus autocomplete="username">
+    </div>
+    <div class="field field--wide">
+      <label for="password">Пароль</label>
+      <input id="password" name="password" type="password" required autocomplete="current-password">
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn-primary">Увійти</button>
+  </div>
+</form>
+{% endblock %}

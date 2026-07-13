@@ -15,7 +15,9 @@
       </div>
     {% endif %}
   </div>
+  {% if request.session.get('username') %}
   <a class="btn-outline" href="/traditions/{{ tradition.tradition_id }}/edit">Редагувати</a>
+  {% endif %}
 </div>
 
 <div class="panel">

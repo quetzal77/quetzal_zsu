@@ -16,7 +16,9 @@
     {% endif %}
     {% if brigade.callsign %}<div class="sub">{{ brigade.callsign }}</div>{% endif %}
   </div>
+  {% if request.session.get('username') %}
   <a class="btn-outline" href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
+  {% endif %}
 </div>
 
 <div class="cols-2">

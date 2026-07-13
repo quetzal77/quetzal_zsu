@@ -2,7 +2,7 @@
 {% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
 {% block content %}
 {% set view = request.query_params.get('view', 'cards') %}
-{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id %}
+{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.region_id %}
 
 <form method="get" action="/brigades" id="filterform">
   <input type="hidden" name="q" value="{{ request.query_params.get('q','') }}">
@@ -18,7 +18,11 @@
       <button type="submit" name="view" value="cards" class="{{ 'is-active' if view != 'table' }}">▦ Картки</button>
       <button type="submit" name="view" value="table" class="{{ 'is-active' if view == 'table' }}">☰ Таблиця</button>
     </div>
+    {% if request.session.get('username') %}
     <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
+    {% endif %}
+
+
   </div>
 
   <div class="filters {{ 'is-hidden' if not has_filters }}" id="filters">
@@ -69,6 +73,18 @@
         {% endfor %}
       </div>
     </div>
+
+    <div class="filter-strip">
+      <span class="filter-strip__label">Регіон</span>
+      <div class="chips">
+        <label class="chip {{ 'is-active' if not filters.region_id }}">
+          <input type="radio" name="region_id" value="" {{ 'checked' if not filters.region_id }} onchange="this.form.submit()" hidden>Усі</label>
+        {% for r in regions %}
+        <label class="chip {{ 'is-active' if filters.region_id == r.region_id }}">
+          <input type="radio" name="region_id" value="{{ r.region_id }}" {{ 'checked' if filters.region_id == r.region_id }} onchange="this.form.submit()" hidden>{{ r.region_name }}</label>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </form>
 
@@ -94,7 +110,7 @@
                 {% if b.honorific_name %}
                 <div class="honorific-inline">
                     <span class="honorific-badge card__honorific" title="{{ b.honorific_name }}">
-                        {{ b.honorific_name_short or b.honorific_name }}
+                        {{ b.honorific_name }}
                     </span>
                 </div>
                 {% endif %}

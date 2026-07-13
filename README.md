@@ -11,7 +11,7 @@
 - Живий пошук за назвою/номером бригади без перезавантаження сторінки
 - Нарукавні знаки бригад (прозорий PNG, єдиний стандарт 440×520)
 - Детальна сторінка бригади: бойовий шлях, спорядження, традиції, фотогалерея, статистика
-- Форма створення й редагування бригади (без автентифікації)
+- Форма створення й редагування бригади (потрібен вхід — див. "Авторизація" нижче)
 - Хронологія битв з переліком бригад-учасниць і їх ролі
 - Сторінка статистики: розподіл за родом військ і ОК, хронологія битв
 - Довідники: спорядження, традиції
@@ -25,11 +25,11 @@ Python 3.13 · FastAPI · Uvicorn · Jinja2 · SQLite (stdlib `sqlite3`, без 
 
 ```
 app/
-├── main.py            # точка входу FastAPI
+├── main.py            # точка входу FastAPI, сесії, exception-handler для логіну
+├── auth.py            # хешування паролів, require_login dependency
 ├── database.py        # підключення до data/quetzal_zsu.db
-├── models.py          # Pydantic-схеми
 ├── templates.py       # спільний Jinja2Templates + cache-busting CSS
-├── routers/           # brigades, battles, equipment, traditions, stats
+├── routers/           # auth, brigades, battles, equipment, traditions, stats
 └── templates/         # Jinja2 HTML-шаблони
 static/
 ├── css/style.css      # всі стилі (без збірки)
@@ -40,6 +40,7 @@ data/
 docs/                  # архітектурний опис, вихідні дані бригад
 .claude/skills/        # Claude Code скіли для розробки
 quetzal_zsu.ps1        # Windows-скрипт: run / stop / check / install
+create_user.py         # CLI для створення/оновлення пароля редактора
 ```
 
 Детальніше про архітектуру і технічні рішення — у [`CLAUDE.md`](CLAUDE.md) та [`docs/architecture.md`](docs/architecture.md).
@@ -100,6 +101,21 @@ docker run --rm -p 8000:8000 -v "$(pwd)/data:/srv/data" quetzal-zsu
 
 Для імпорту бригад з `docs/brigades.md` (Claude Code): `/add-brigades <назва розділу>`
 Для додавання нарукавного знака (Claude Code): `/add-brigade-emblem`
+
+## Авторизація
+
+Перегляд сайту відкритий для всіх. Створення й редагування бригад/традицій вимагає входу.
+
+Створити (або оновити пароль) редактора:
+```bash
+python create_user.py <username>
+```
+
+Для продакшн-розгортання обов'язково задайте свій `SESSION_SECRET` (інакше буде використано
+небезпечний дефолт з попередженням у консолі):
+```bash
+export SESSION_SECRET="<довгий випадковий рядок>"
+```
 
 ## Розгортання
 

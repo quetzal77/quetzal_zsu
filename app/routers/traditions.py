@@ -1,9 +1,10 @@
 import sqlite3
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
+from app.auth import require_login
 from app.database import get_db
 from app.templates import templates
 
@@ -33,7 +34,9 @@ def list_traditions(request: Request, db: sqlite3.Connection = Depends(get_db)):
 
 
 @router.get("/new")
-def new_tradition_form(request: Request, db: sqlite3.Connection = Depends(get_db)):
+def new_tradition_form(
+    request: Request, db: sqlite3.Connection = Depends(get_db), _user: str = Depends(require_login)
+):
     return templates.TemplateResponse(
         request, "tradition_form.html",
         {"tradition": None, "brigades": [], "all_brigades": _all_brigades(db)},
@@ -46,12 +49,16 @@ def create_tradition(
     description: Optional[str] = Form(None),
     photo: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
 ):
-    cur = db.execute(
-        "INSERT INTO traditions (title, description, photo) VALUES (?, ?, ?)",
-        (title, description or None, photo or None),
-    )
-    db.commit()
+    try:
+        cur = db.execute(
+            "INSERT INTO traditions (title, description, photo) VALUES (?, ?, ?)",
+            (title, description or None, photo or None),
+        )
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return RedirectResponse(url=f"/traditions/{cur.lastrowid}/edit", status_code=303)
 
 
@@ -81,7 +88,12 @@ def tradition_detail(tradition_id: int, request: Request, db: sqlite3.Connection
 
 
 @router.get("/{tradition_id}/edit")
-def edit_tradition_form(tradition_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+def edit_tradition_form(
+    tradition_id: int,
+    request: Request,
+    db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
+):
     tradition = db.execute(
         "SELECT * FROM traditions WHERE tradition_id = ?", (tradition_id,)
     ).fetchone()
@@ -117,13 +129,17 @@ def update_tradition(
     description: Optional[str] = Form(None),
     photo: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
 ):
-    db.execute(
-        """UPDATE traditions SET title = ?, description = ?, photo = ?, updated_at = CURRENT_TIMESTAMP
-           WHERE tradition_id = ?""",
-        (title, description or None, photo or None, tradition_id),
-    )
-    db.commit()
+    try:
+        db.execute(
+            """UPDATE traditions SET title = ?, description = ?, photo = ?, updated_at = CURRENT_TIMESTAMP
+               WHERE tradition_id = ?""",
+            (title, description or None, photo or None, tradition_id),
+        )
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return RedirectResponse(url="/traditions", status_code=303)
 
 
@@ -134,6 +150,7 @@ def add_brigade_to_tradition(
     date_assigned: Optional[str] = Form(None),
     unit_name: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
 ):
     # 1. Завантажуємо традицію з БД
     tradition = db.execute(
@@ -145,23 +162,26 @@ def add_brigade_to_tradition(
     is_honorific = tradition["is_honorific"] == 1
 
     # 3. Вставляємо дані залежно від типу традиції
-    if is_honorific:
-        db.execute(
-            """
-            INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned, unit_name)
-            VALUES (?, ?, ?, ?)
-            """,
-            (brigade_id, tradition_id, date_assigned, unit_name),
-        )
-    else:
-        db.execute(
-            """
-            INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned)
-            VALUES (?, ?, ?)
-            """,
-            (brigade_id, tradition_id, date_assigned),
-        )
-    db.commit()
+    try:
+        if is_honorific:
+            db.execute(
+                """
+                INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned, unit_name)
+                VALUES (?, ?, ?, ?)
+                """,
+                (brigade_id, tradition_id, date_assigned, unit_name),
+            )
+        else:
+            db.execute(
+                """
+                INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned)
+                VALUES (?, ?, ?)
+                """,
+                (brigade_id, tradition_id, date_assigned),
+            )
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)
 
 
@@ -170,6 +190,7 @@ def remove_brigade_from_tradition(
     tradition_id: int,
     brigade_id: int,
     db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
 ):
     db.execute(
         "DELETE FROM brigade_traditions WHERE tradition_id = ? AND brigade_id = ?",

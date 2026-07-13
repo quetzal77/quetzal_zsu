@@ -9,7 +9,7 @@
 | Шар | Технологія |
 |---|---|
 | Мова | Python 3.13 |
-| Веб-фреймворк | FastAPI 0.139+ |
+| Веб-фреймворк | FastAPI 0.115+ |
 | Шаблони | Jinja2 (server-side render, без збірки фронтенду) |
 | БД | SQLite — `data/quetzal_zsu.db` (stdlib `sqlite3`, без ORM) |
 | Сервер | Uvicorn (ASGI) |
@@ -21,18 +21,20 @@
 
 ```
 app/
-├── main.py            # FastAPI app, реєстрація роутерів, маршрут /favicon.ico
+├── main.py            # FastAPI app, SessionMiddleware, реєстрація роутерів, маршрут /favicon.ico
+├── auth.py            # hash_password/verify_password (hashlib.scrypt), require_login dependency
 ├── database.py        # get_db() — sqlite3 connection з Row factory
-├── models.py          # Pydantic-схеми для форм (BrigadeIn тощо)
 ├── templates.py       # Єдиний Jinja2Templates + asset_version() для cache-busting CSS
 └── routers/
+    ├── auth.py        # /login (GET+POST), /logout (POST)
     ├── brigades.py    # /brigades, /brigades/{id}, /brigades/{id}/edit, /brigades/new
     ├── battles.py     # /battles, /battles/{id}
     ├── equipment.py   # /equipment
     ├── traditions.py  # /traditions
     └── stats.py       # /stats (розподіл за родом військ/ОК, лічильники)
 app/templates/
-    base.html          # навігація, favicon, asset_version CSS cache-bust
+    base.html          # навігація, favicon, asset_version CSS cache-bust, логін/логаут у topbar
+    login.html          # форма входу
     index.html         # список бригад, фільтри-чипи, вид карток/таблиці, живий пошук
     brigade_detail.html
     brigade_form.html
@@ -52,6 +54,7 @@ docs/
     add-brigades/      # /add-brigades <розділ> — імпорт бригад з docs/brigades.md у БД
     add-brigade-emblem/ # /add-brigade-emblem — додавання/нормалізація нарукавного знака
 quetzal_zsu.ps1        # Windows helper: run / stop / check / install
+create_user.py         # CLI: python create_user.py <username> — створює/оновлює редактора
 ```
 
 ---
@@ -84,6 +87,7 @@ python -m uvicorn app.main:app --reload
 - **`battles`** — FK на `locations`; `CHECK(start_date <= end_date)`
 - **`brigade_battles`**, **`brigade_equipment`**, **`brigade_traditions`** — junction-таблиці з повними FK на обидва боки
 - **`brigade_photos`** — до 3 фото на бригаду, `UNIQUE(brigade_id, position)`, `CHECK(position IN (1,2,3))`
+- **`users`** — `username` (UNIQUE) + `password_hash` (`hashlib.scrypt`, формат `salt_hex$digest_hex`); немає FK на інші таблиці, це лише облікові записи редакторів
 - Усі таблиці мають `created_at`/`updated_at`; довідники мають `UNIQUE` на назвах
 
 ### Підключення
@@ -120,6 +124,23 @@ python -m uvicorn app.main:app --reload
 - **Favicon:** `GET /favicon.ico` → `FileResponse(static/img/zsu-tryzub.png)` (жовтий тризуб ЗСУ)
 - **Cache-bust CSS:** функція, а не константа — щоб зміни підхоплювались без рестарту сервера
 - **Прозорі емблеми:** `object-fit: contain` + прозорий PNG → контейнер `.emblem.has-image` без фону і рамки
+
+---
+
+## Авторизація
+
+- Перегляд (списки, деталі, статистика) — публічний, без входу.
+- Створення/редагування бригад і традицій (`GET+POST /brigades/new`, `/brigades/{id}/edit`,
+  `/traditions/new`, `/traditions/{id}/edit`, `/traditions/{id}/brigades*`) захищене
+  через `Depends(require_login)` (`app/auth.py`) — редіректить на `/login?next=...`, якщо в
+  сесії немає `username`.
+- Сесії — `starlette.middleware.sessions.SessionMiddleware` (підписані cookie, `itsdangerous`).
+  Секрет береться з env `SESSION_SECRET`; якщо не задано — небезпечний дефолт для локальної
+  розробки з попередженням у консоль. **На проді (Fly.io) обов'язково задати свій
+  `SESSION_SECRET`** (`fly secrets set SESSION_SECRET=...`).
+- Паролі — `hashlib.scrypt` (стандартна бібліотека, без passlib/bcrypt).
+- Немає публічної форми реєстрації і немає журналу "хто що редагував" — свідоме рішення,
+  щоб не розширювати обсяг. Нові облікові записи створюються вручну: `python create_user.py <username>`.
 
 ---
 

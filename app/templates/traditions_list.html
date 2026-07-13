@@ -3,9 +3,11 @@
 {% block content %}
 <div class="page-eyebrow">Довідник</div>
 
+{% if request.session.get('username') %}
 <div class="toolbar" style="justify-content:flex-end;margin-bottom:20px">
   <a class="btn-primary" href="/traditions/new">＋ Додати традицію</a>
 </div>
+{% endif %}
 
 <div class="catalog-grid">
   {% for t in traditions %}

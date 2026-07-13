@@ -1,10 +1,12 @@
 import sqlite3
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
+from app.auth import require_login
 from app.database import get_db
+from app.sanitize import sanitize_html
 from app.templates import templates
 
 router = APIRouter(prefix="/brigades", tags=["brigades"])
@@ -15,7 +17,10 @@ def _optional_int(value: Optional[str]) -> Optional[int]:
     that before it reaches our code, so these fields must arrive as str."""
     if value is None or value == "":
         return None
-    return int(value)
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def _lookups(db: sqlite3.Connection) -> dict:
@@ -63,8 +68,9 @@ def list_brigades(
                (
                    SELECT bt.unit_name
                    FROM brigade_traditions bt
+                   JOIN traditions t ON t.tradition_id = bt.tradition_id
                    WHERE bt.brigade_id = b.brigade_id
-                     AND bt.tradition_id = 3
+                     AND t.is_honorific = 1
                ) AS honorific_name
         FROM brigades b
         LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
@@ -119,7 +125,9 @@ def list_brigades(
 
 
 @router.get("/new")
-def new_brigade_form(request: Request, db: sqlite3.Connection = Depends(get_db)):
+def new_brigade_form(
+    request: Request, db: sqlite3.Connection = Depends(get_db), _user: str = Depends(require_login)
+):
     return templates.TemplateResponse(
         request,
         "brigade_form.html",
@@ -139,25 +147,29 @@ def create_brigade(
     formed_date: Optional[str] = Form(None),
     flag_date: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
 ):
-    cur = db.execute(
-        """INSERT INTO brigades
-           (name, description, military_branch_id, corps_id, territorial_command_id,
-            troop_type_id, location_id, formed_date, flag_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (
-            name,
-            description or None,
-            _optional_int(military_branch_id),
-            _optional_int(corps_id),
-            _optional_int(territorial_command_id),
-            _optional_int(troop_type_id),
-            _optional_int(location_id),
-            formed_date or None,
-            flag_date or None,
-        ),
-    )
-    db.commit()
+    try:
+        cur = db.execute(
+            """INSERT INTO brigades
+               (name, description, military_branch_id, corps_id, territorial_command_id,
+                troop_type_id, location_id, formed_date, flag_date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                name,
+                sanitize_html(description) or None,
+                _optional_int(military_branch_id),
+                _optional_int(corps_id),
+                _optional_int(territorial_command_id),
+                _optional_int(troop_type_id),
+                _optional_int(location_id),
+                formed_date or None,
+                flag_date or None,
+            ),
+        )
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return RedirectResponse(url=f"/brigades/{cur.lastrowid}", status_code=303)
 
 
@@ -169,8 +181,9 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
                   (
                       SELECT bt.unit_name
                       FROM brigade_traditions bt
+                      JOIN traditions t ON t.tradition_id = bt.tradition_id
                       WHERE bt.brigade_id = b.brigade_id
-                        AND bt.tradition_id = 3
+                        AND t.is_honorific = 1
                   ) AS honorific_name
            FROM brigades b
            LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
@@ -241,69 +254,78 @@ def update_brigade(
         photo_1: Optional[str] = Form(None),
         photo_2: Optional[str] = Form(None),
         db: sqlite3.Connection = Depends(get_db),
+        _user: str = Depends(require_login),
 ):
-    db.execute(
-        """UPDATE brigades SET
-               name = ?, description = ?, military_branch_id = ?, corps_id = ?,
-               territorial_command_id = ?, troop_type_id = ?, location_id = ?,
-               formed_date = ?, flag_date = ?, updated_at = CURRENT_TIMESTAMP
-           WHERE brigade_id = ?""",
-        (
-            name,
-            description or None,
-            _optional_int(military_branch_id),
-            _optional_int(corps_id),
-            _optional_int(territorial_command_id),
-            _optional_int(troop_type_id),
-            _optional_int(location_id),
-            formed_date or None,
-            flag_date or None,
-            brigade_id,
-        ),
-    )
+    try:
+        db.execute(
+            """UPDATE brigades SET
+                   name = ?, description = ?, military_branch_id = ?, corps_id = ?,
+                   territorial_command_id = ?, troop_type_id = ?, location_id = ?,
+                   formed_date = ?, flag_date = ?, updated_at = CURRENT_TIMESTAMP
+               WHERE brigade_id = ?""",
+            (
+                name,
+                sanitize_html(description) or None,
+                _optional_int(military_branch_id),
+                _optional_int(corps_id),
+                _optional_int(territorial_command_id),
+                _optional_int(troop_type_id),
+                _optional_int(location_id),
+                formed_date or None,
+                flag_date or None,
+                brigade_id,
+            ),
+        )
 
-    photos = [photo_0, photo_1, photo_2]
+        photos = [photo_0, photo_1, photo_2]
 
-    existing = db.execute(
-        """SELECT photo_id, file_path, position
-           FROM brigade_photos
-           WHERE brigade_id = ?
-           ORDER BY position""",
-        (brigade_id,),
-    ).fetchall()
+        existing = db.execute(
+            """SELECT photo_id, file_path, position
+               FROM brigade_photos
+               WHERE brigade_id = ?
+               ORDER BY position""",
+            (brigade_id,),
+        ).fetchall()
 
-    for idx in range(3):
-        new_path = photos[idx] or ""
-        position = idx + 1  # ← 1, 2, 3 замість 0, 1, 2
+        for idx in range(3):
+            new_path = photos[idx] or ""
+            position = idx + 1  # ← 1, 2, 3 замість 0, 1, 2
 
-        if new_path:
-            if idx < len(existing):
-                db.execute(
-                    """UPDATE brigade_photos
-                       SET file_path = ?, position = ?
-                       WHERE photo_id = ?""",
-                    (new_path, position, existing[idx][0]),
-                )
+            if new_path:
+                if idx < len(existing):
+                    db.execute(
+                        """UPDATE brigade_photos
+                           SET file_path = ?, position = ?
+                           WHERE photo_id = ?""",
+                        (new_path, position, existing[idx][0]),
+                    )
+                else:
+                    db.execute(
+                        """INSERT INTO brigade_photos (brigade_id, file_path, position)
+                           VALUES (?, ?, ?)""",
+                        (brigade_id, new_path, position),
+                    )
             else:
-                db.execute(
-                    """INSERT INTO brigade_photos (brigade_id, file_path, position)
-                       VALUES (?, ?, ?)""",
-                    (brigade_id, new_path, position),
-                )
-        else:
-            if idx < len(existing):
-                db.execute(
-                    "DELETE FROM brigade_photos WHERE photo_id = ?",
-                    (existing[idx][0],),
-                )
+                if idx < len(existing):
+                    db.execute(
+                        "DELETE FROM brigade_photos WHERE photo_id = ?",
+                        (existing[idx][0],),
+                    )
 
-    db.commit()
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return RedirectResponse(url=f"/brigades/{brigade_id}", status_code=303)
 
 
 
 @router.get("/{brigade_id}/edit")
-def edit_brigade_form( brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+def edit_brigade_form(
+    brigade_id: int,
+    request: Request,
+    db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
+):
     brigade = db.execute(
         "SELECT * FROM brigades WHERE brigade_id = ?",
         (brigade_id,),
