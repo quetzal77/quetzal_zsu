@@ -17,7 +17,12 @@
     {% if brigade.callsign %}<div class="sub">{{ brigade.callsign }}</div>{% endif %}
   </div>
   {% if request.session.get('username') %}
-  <a class="btn-outline" href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
+  <div style="display:flex;gap:10px">
+    <a class="btn-outline" href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
+    <button type="submit" form="delete-brigade-form" class="btn-danger"
+            onclick="return confirm('Видалити цю бригаду? Цю дію не можна скасувати.')">Видалити</button>
+  </div>
+  <form id="delete-brigade-form" method="post" action="/brigades/{{ brigade.brigade_id }}/delete" style="display:none"></form>
   {% endif %}
 </div>
 
@@ -41,7 +46,7 @@
       <div class="panel">
           <div class="panel__head">Традиції</div>
           {% for tr in traditions %}
-          <div class="list-row">
+          <div class="list-row {{ 'list-row--with-photo' if (tr.tradition_photo or tr.brigade_tradition_photo) }}">
               <span style="display:flex;align-items:center;gap:12px;min-width:0">
                 <span class="dot"></span>
                     {% if tr.title == "Почесне найменування частини" %}
@@ -53,6 +58,12 @@
                         <span style="color:var(--text)">{{ tr.title }}</span>
                     {% endif %}
               </span>
+              {% if tr.tradition_photo %}
+              <img src="/static/img/{{ tr.tradition_photo }}" alt="{{ tr.title }}">
+              {% endif %}
+              {% if tr.brigade_tradition_photo %}
+              <img src="/static/img/{{ tr.brigade_tradition_photo }}" alt="{{ tr.title }}">
+              {% endif %}
           </div>
           {% endfor %}
       </div>

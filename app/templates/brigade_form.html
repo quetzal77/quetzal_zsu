@@ -16,7 +16,7 @@
     </div>
     <div class="field field--wide">
       <label for="description">Опис</label>
-      <textarea id="description" name="description" rows="3" placeholder="Коротка історія та призначення з'єднання…">{{ brigade.description if brigade else '' }}</textarea>
+      <textarea id="description" name="description" rows="3" placeholder="Коротка історія та призначення з'єднання…">{{ brigade.description or '' }}</textarea>
     </div>
 
     <div class="field">
@@ -66,11 +66,11 @@
     </div>
     <div class="field">
       <label for="formed_date">Засновано (РРРР-ММ-ДД)</label>
-      <input id="formed_date" name="formed_date" class="mono" value="{{ brigade.formed_date if brigade else '' }}" placeholder="РРРР-ММ-ДД">
+      <input id="formed_date" name="formed_date" class="mono" value="{{ brigade.formed_date or '' }}" placeholder="РРРР-ММ-ДД">
     </div>
     <div class="field">
       <label for="flag_date">Бойовий прапор (РРРР-ММ-ДД)</label>
-      <input id="flag_date" name="flag_date" class="mono" value="{{ brigade.flag_date if brigade else '' }}" placeholder="РРРР-ММ-ДД">
+      <input id="flag_date" name="flag_date" class="mono" value="{{ brigade.flag_date or '' }}" placeholder="РРРР-ММ-ДД">
     </div>
   </div>
 

@@ -99,7 +99,7 @@ def edit_tradition_form(
     ).fetchone()
 
     brigades = db.execute(
-        """SELECT b.brigade_id, b.name, bt.date_assigned, bt.unit_name
+        """SELECT b.brigade_id, b.name, bt.date_assigned, bt.unit_name, bt.photo
            FROM brigade_traditions bt
            JOIN brigades b ON bt.brigade_id = b.brigade_id
            WHERE bt.tradition_id = ?
@@ -143,12 +143,25 @@ def update_tradition(
     return RedirectResponse(url="/traditions", status_code=303)
 
 
+@router.post("/{tradition_id}/delete")
+def delete_tradition(
+    tradition_id: int,
+    db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
+):
+    db.execute("DELETE FROM brigade_traditions WHERE tradition_id = ?", (tradition_id,))
+    db.execute("DELETE FROM traditions WHERE tradition_id = ?", (tradition_id,))
+    db.commit()
+    return RedirectResponse(url="/traditions", status_code=303)
+
+
 @router.post("/{tradition_id}/brigades")
 def add_brigade_to_tradition(
     tradition_id: int,
     brigade_id: int = Form(...),
     date_assigned: Optional[str] = Form(None),
     unit_name: str | None = Form(None),
+    photo: str | None = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -166,22 +179,38 @@ def add_brigade_to_tradition(
         if is_honorific:
             db.execute(
                 """
-                INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned, unit_name)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned, unit_name, photo)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (brigade_id, tradition_id, date_assigned, unit_name),
+                (brigade_id, tradition_id, date_assigned, unit_name, photo or None),
             )
         else:
             db.execute(
                 """
-                INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned)
-                VALUES (?, ?, ?)
+                INSERT INTO brigade_traditions (brigade_id, tradition_id, date_assigned, photo)
+                VALUES (?, ?, ?, ?)
                 """,
-                (brigade_id, tradition_id, date_assigned),
+                (brigade_id, tradition_id, date_assigned, photo or None),
             )
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)
+
+
+@router.post("/{tradition_id}/brigades/{brigade_id}/edit")
+def update_brigade_tradition(
+    tradition_id: int,
+    brigade_id: int,
+    photo: str | None = Form(None),
+    db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
+):
+    db.execute(
+        "UPDATE brigade_traditions SET photo = ? WHERE tradition_id = ? AND brigade_id = ?",
+        (photo or None, tradition_id, brigade_id),
+    )
+    db.commit()
     return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)
 
 

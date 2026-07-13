@@ -20,13 +20,13 @@
     <div class="field field--wide">
       <label for="description">Опис</label>
       <textarea id="description" name="description" rows="4"
-                placeholder="Короткий опис традиції…">{{ tradition.description if tradition else '' }}</textarea>
+                placeholder="Короткий опис традиції…">{{ tradition.description or '' }}</textarea>
     </div>
 
     <div class="field field--wide">
         <label for="photo">Фото (URL)</label>
         <input id="photo" name="photo"
-               value="{{ tradition.photo if tradition else '' }}"
+               value="{{ tradition.photo or '' }}"
                placeholder="Додай шлях до фото">
     </div>
   </div>
@@ -51,6 +51,11 @@
           <input id="date_assigned" name="date_assigned" class="mono"
                  placeholder="РРРР-ММ-ДД" form="add-brigade-form">
         </div>
+        <div class="field field--wide">
+          <label for="new_photo">Фото бригадної традиції (URL)</label>
+          <input id="new_photo" name="photo" form="add-brigade-form"
+                 placeholder="Додай шлях до фото">
+        </div>
       </div>
         {% if tradition and tradition.is_honorific %}
         <div class="form-grid" style="margin-top:12px;gap:14px 20px">
@@ -74,17 +79,24 @@
       </div>
       <div class="panel" style="margin-bottom:8px">
         {% for b in brigades %}
-          <div class="list-row">
+          <div class="list-row" style="flex-wrap:wrap">
             <span style="min-width:0;overflow:hidden">
               <span style="color:var(--ink);font-weight:600;font-size:14px">{{ b.name }}</span>
               {% if b.date_assigned %}
                 <span class="mono" style="color:var(--faint);font-size:12px;margin-left:10px">{{ b.date_assigned }}</span>
               {% endif %}
             </span>
-            <button type="submit" form="remove-{{ b.brigade_id }}"
-                    class="btn-ghost"
-                    style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
-                    onclick="return confirm('Видалити цю бригаду?')">✕</button>
+            <span style="display:flex;align-items:center;gap:8px">
+              <input name="photo" form="edit-photo-{{ b.brigade_id }}" value="{{ b.photo or '' }}"
+                     class="mono" placeholder="Фото бригадної традиції (URL)"
+                     style="width:200px;font-size:12px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+              <button type="submit" form="edit-photo-{{ b.brigade_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти фото</button>
+              <button type="submit" form="remove-{{ b.brigade_id }}"
+                      class="btn-ghost"
+                      style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
+                      onclick="return confirm('Видалити цю бригаду?')">✕</button>
+            </span>
           </div>
         {% endfor %}
       </div>
@@ -111,8 +123,11 @@
         action="/traditions/{{ tradition.tradition_id }}/brigades"
         style="display:none"></form>
 
-  {# ── Форми для видалення бригад ── #}
+  {# ── Форми для редагування фото та видалення бригад ── #}
   {% for b in brigades %}
+    <form id="edit-photo-{{ b.brigade_id }}" method="post"
+          action="/traditions/{{ tradition.tradition_id }}/brigades/{{ b.brigade_id }}/edit"
+          style="display:none"></form>
     <form id="remove-{{ b.brigade_id }}" method="post"
           action="/traditions/{{ tradition.tradition_id }}/brigades/{{ b.brigade_id }}/remove"
           style="display:none"></form>

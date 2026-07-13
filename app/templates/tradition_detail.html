@@ -16,7 +16,12 @@
     {% endif %}
   </div>
   {% if request.session.get('username') %}
-  <a class="btn-outline" href="/traditions/{{ tradition.tradition_id }}/edit">Редагувати</a>
+  <div style="display:flex;gap:10px">
+    <a class="btn-outline" href="/traditions/{{ tradition.tradition_id }}/edit">Редагувати</a>
+    <button type="submit" form="delete-tradition-form" class="btn-danger"
+            onclick="return confirm('Видалити цю традицію? Цю дію не можна скасувати.')">Видалити</button>
+  </div>
+  <form id="delete-tradition-form" method="post" action="/traditions/{{ tradition.tradition_id }}/delete" style="display:none"></form>
   {% endif %}
 </div>
 

@@ -223,7 +223,8 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
     ).fetchall()
 
     traditions = db.execute(
-        """SELECT t.tradition_id, t.title, t.description, bt.unit_name, bt.date_assigned
+        """SELECT t.tradition_id, t.title, t.description, bt.unit_name, bt.date_assigned,
+                  t.photo AS tradition_photo, bt.photo AS brigade_tradition_photo
         FROM brigade_traditions bt
         JOIN traditions t ON t.tradition_id = bt.tradition_id
         WHERE bt.brigade_id = ?
@@ -317,6 +318,22 @@ def update_brigade(
         raise HTTPException(status_code=400, detail=str(e))
     return RedirectResponse(url=f"/brigades/{brigade_id}", status_code=303)
 
+
+@router.post("/{brigade_id}/delete")
+def delete_brigade(
+    brigade_id: int,
+    db: sqlite3.Connection = Depends(get_db),
+    _user: str = Depends(require_login),
+):
+    # junction/child rows have no ON DELETE CASCADE, so they must go first
+    # or PRAGMA foreign_keys = ON (app/database.py) rejects the delete.
+    db.execute("DELETE FROM brigade_battles WHERE brigade_id = ?", (brigade_id,))
+    db.execute("DELETE FROM brigade_equipment WHERE brigade_id = ?", (brigade_id,))
+    db.execute("DELETE FROM brigade_traditions WHERE brigade_id = ?", (brigade_id,))
+    db.execute("DELETE FROM brigade_photos WHERE brigade_id = ?", (brigade_id,))
+    db.execute("DELETE FROM brigades WHERE brigade_id = ?", (brigade_id,))
+    db.commit()
+    return RedirectResponse(url="/brigades", status_code=303)
 
 
 @router.get("/{brigade_id}/edit")
