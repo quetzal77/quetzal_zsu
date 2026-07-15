@@ -72,6 +72,10 @@
       <label for="flag_date">Бойовий прапор (РРРР-ММ-ДД)</label>
       <input id="flag_date" name="flag_date" class="mono" value="{{ brigade.flag_date or '' }}" placeholder="РРРР-ММ-ДД">
     </div>
+    <div class="field">
+      <label for="brigade_date">Стала бригадою (РРРР-ММ-ДД)</label>
+      <input id="brigade_date" name="brigade_date" class="mono" value="{{ brigade.brigade_date or '' }}" placeholder="РРРР-ММ-ДД">
+    </div>
   </div>
 
     {% if brigade %}

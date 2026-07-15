@@ -118,7 +118,7 @@
             <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
             <td>{{ b.corps_name or '—' }}</td>
             <td>{{ b.city_name or '—' }}</td>
-            <td class="num-mono">{{ b.formed_date[:4] if b.formed_date else '—' }}</td>
+            <td class="num-mono">{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</td>
             <td>
               {% if b.flag_date %}
                 <span class="flag" title="Бойовий прапор ЗСУ вручено"><img src="/static/img/zsu-ensign.svg" alt=""></span>
@@ -156,7 +156,7 @@
         </div>
         <div class="card__foot">
           <span class="stat-block">
-            <b>{{ b.formed_date[:4] if b.formed_date else '—' }}</b>
+            <b>{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</b>
             <small>рік заснування</small>
           </span>
           <span class="stat-block" style="align-items:flex-end">

@@ -50,6 +50,7 @@
 | `troop_type_id` | INTEGER | Тип військ | FK |
 | `formed_date` | DATE | Дата формування | — |
 | `flag_date` | DATE | Дата прапора | — |
+| `brigade_date` | DATE | Дата, коли підрозділ став бригадою | Якщо порожньо — на списках показується `formed_date` |
 | `location_id` | INTEGER | Дислокація | FK |
 | `emblem_file` | TEXT | Файл емблеми | — |
 | `created_at` | TIMESTAMP | Створено | CURRENT_TIMESTAMP |

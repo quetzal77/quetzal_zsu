@@ -63,7 +63,7 @@ def list_brigades(
     region_id = _optional_int(region_id)
 
     query = """
-        SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date,
+        SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date, b.brigade_date,
                mb.branch_name, ac.corps_name, l.city_name,
                (
                    SELECT bt.unit_name
@@ -146,6 +146,7 @@ def create_brigade(
     location_id: Optional[str] = Form(None),
     formed_date: Optional[str] = Form(None),
     flag_date: Optional[str] = Form(None),
+    brigade_date: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -153,8 +154,8 @@ def create_brigade(
         cur = db.execute(
             """INSERT INTO brigades
                (name, description, military_branch_id, corps_id, territorial_command_id,
-                troop_type_id, location_id, formed_date, flag_date)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                troop_type_id, location_id, formed_date, flag_date, brigade_date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 name,
                 sanitize_html(description) or None,
@@ -165,6 +166,7 @@ def create_brigade(
                 _optional_int(location_id),
                 formed_date or None,
                 flag_date or None,
+                brigade_date or None,
             ),
         )
         db.commit()
@@ -251,6 +253,7 @@ def update_brigade(
         location_id: Optional[str] = Form(None),
         formed_date: Optional[str] = Form(None),
         flag_date: Optional[str] = Form(None),
+        brigade_date: Optional[str] = Form(None),
         photo_0: Optional[str] = Form(None),
         photo_1: Optional[str] = Form(None),
         photo_2: Optional[str] = Form(None),
@@ -262,7 +265,7 @@ def update_brigade(
             """UPDATE brigades SET
                    name = ?, description = ?, military_branch_id = ?, corps_id = ?,
                    territorial_command_id = ?, troop_type_id = ?, location_id = ?,
-                   formed_date = ?, flag_date = ?, updated_at = CURRENT_TIMESTAMP
+                   formed_date = ?, flag_date = ?, brigade_date = ?, updated_at = CURRENT_TIMESTAMP
                WHERE brigade_id = ?""",
             (
                 name,
@@ -274,6 +277,7 @@ def update_brigade(
                 _optional_int(location_id),
                 formed_date or None,
                 flag_date or None,
+                brigade_date or None,
                 brigade_id,
             ),
         )

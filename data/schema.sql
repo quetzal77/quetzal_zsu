@@ -114,6 +114,7 @@ CREATE TABLE brigades (
     troop_type_id            INTEGER REFERENCES troop_types (type_id),
     formed_date              DATE,
     flag_date                DATE,
+    brigade_date             DATE, -- дата, коли підрозділ став бригадою; якщо порожньо, на списках показується formed_date
     location_id              INTEGER REFERENCES locations (location_id),
     emblem_file              TEXT,
     created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -170,6 +170,7 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .stats .stat span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; display: block; }
 
 .cols-2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 24px; align-items: start; }
+.cols-2--battle { grid-template-columns: 1.25fr 0.75fr; }
 .panel { background: #fff; border: 1px solid var(--line); border-radius: 3px; box-shadow: var(--shadow); }
 .panel__head { padding: 14px 18px; border-bottom: 1px solid var(--line-2); color: var(--faint); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
 .panel__body { padding: 18px; }
