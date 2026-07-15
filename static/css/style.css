@@ -136,6 +136,9 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .flag--empty { border: 1px dashed #C9CED8; background: var(--line-3); }
 
+/* ---------- Equipment card ---------- */
+.equipment-card__desc { color: var(--muted); font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; }
+
 /* ---------- Table ---------- */
 .table-wrap { background: #fff; border: 1px solid var(--line); border-radius: 3px; overflow-x: auto; box-shadow: var(--shadow); }
 .brigades-table { width: 100%; border-collapse: collapse; min-width: 640px; }

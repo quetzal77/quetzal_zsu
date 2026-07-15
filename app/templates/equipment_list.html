@@ -4,20 +4,26 @@
 <div class="page-eyebrow">Довідник</div>
 <h1 style="margin:0 0 24px;font-size:32px;font-weight:700;color:var(--ink)">Спорядження</h1>
 
-<div class="catalog-grid">
+{% if request.session.get('username') %}
+<div class="toolbar" style="justify-content:flex-end;margin-bottom:20px">
+  <a class="btn-primary" href="/equipment/new">＋ Додати спорядження</a>
+</div>
+{% endif %}
+
+<div class="grid-cards">
   {% for e in equipment %}
-    <div class="panel" style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-      <div style="flex-grow:1">
-        <div style="color:var(--ink);font-weight:700;font-size:15px;line-height:1.25">{{ e.name }}</div>
-        {% if e.description %}<div style="color:var(--muted);font-size:12px;margin-top:3px">{{ e.description }}</div>{% endif %}
+    {% if loop.first or e.type_name != equipment[loop.index0 - 1].type_name %}
+      <div class="divider"><span>{{ e.type_name or 'Без типу' }}</span></div>
+    {% endif %}
+    <a class="card equipment-card" href="/equipment/{{ e.equipment_id }}">
+      <div class="card__head">
+        <span class="card__title">
+          <span class="card__name">{{ e.name }}</span>
+          {% if e.adopted_date %}<span class="card__sub mono">на озброєнні з {{ e.adopted_date }}</span>{% endif %}
+        </span>
       </div>
-      {% if e.brigade_count is defined %}
-      <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--line-2)">
-        <span class="mono" style="color:var(--green);font-weight:700;font-size:15px">{{ e.brigade_count }}</span>
-        <span style="color:var(--ghost);font-size:11px;text-transform:uppercase;letter-spacing:0.08em">бригад</span>
-      </div>
-      {% endif %}
-    </div>
+      {% if e.description %}<div class="equipment-card__desc">{{ e.description|striptags|truncate(120) }}</div>{% endif %}
+    </a>
   {% else %}
     <div class="empty" style="grid-column:1/-1">Позиції ще не додані.</div>
   {% endfor %}

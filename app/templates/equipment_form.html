@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{% if equipment %}Редагування спорядження{% else %}Нове спорядження{% endif %} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="{% if equipment %}/equipment/{{ equipment.equipment_id }}{% else %}/equipment{% endif %}">← Скасувати</a>
+<div class="page-eyebrow" style="margin-bottom:8px">{% if equipment %}Редагування{% else %}Новий запис{% endif %}</div>
+<h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">
+  {% if equipment %}Редагування: {{ equipment.name }}{% else %}Нове спорядження{% endif %}
+</h1>
+
+<form id="main-form" class="brigade-form" method="post"
+      action="{% if equipment %}/equipment/{{ equipment.equipment_id }}/edit{% else %}/equipment/new{% endif %}">
+  <div class="form-grid">
+    <div class="field field--wide">
+      <label for="name">Назва *</label>
+      <input id="name" name="name" required value="{{ equipment.name if equipment else '' }}"
+             placeholder="напр. БТР-4">
+    </div>
+    <div class="field field--wide">
+      <label for="description">Опис</label>
+      <textarea id="description" name="description" rows="4"
+                placeholder="Короткий опис зразка озброєння…">{{ equipment.description or '' }}</textarea>
+    </div>
+
+    <div class="field">
+      <label for="equipment_type_id" style="min-height:2.4em">Вид спорядження</label>
+      <select id="equipment_type_id" name="equipment_type_id">
+        <option value="">—</option>
+        {% for t in equipment_types %}
+        <option value="{{ t.equipment_type_id }}" {{ 'selected' if equipment and equipment.equipment_type_id == t.equipment_type_id }}>{{ t.type_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="adopted_date" style="min-height:2.4em">Дата прийняття на озброєння (РРРР-ММ-ДД)</label>
+      <input id="adopted_date" name="adopted_date" class="mono" value="{{ equipment.adopted_date or '' }}" placeholder="РРРР-ММ-ДД">
+    </div>
+    <div class="field field--wide">
+      <label for="photo">Фото (файл у static/img)</label>
+      <input id="photo" name="photo" value="{{ equipment.photo or '' }}" placeholder="напр. bmp2.png">
+    </div>
+  </div>
+
+  {# ── Секція бригад-користувачів (тільки при редагуванні) ── #}
+  {% if equipment %}
+
+    {% if all_brigades %}
+      <div class="form-grid" style="margin-top:24px;gap:14px 20px">
+        <div class="field">
+          <label for="brigade_id">Обрати бригаду</label>
+          <select id="brigade_id" name="brigade_id" form="add-brigade-form" required>
+            <option value="">— обрати —</option>
+            {% for b in all_brigades %}
+              <option value="{{ b.brigade_id }}">{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button type="submit" form="add-brigade-form" class="btn-outline">+ Додати до списку</button>
+      </div>
+    {% endif %}
+
+    {% if brigades %}
+      <div style="margin-top:24px;margin-bottom:8px;color:var(--faint);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700">
+        Бригади, що використовують
+      </div>
+      <div class="panel" style="margin-bottom:8px">
+        {% for b in brigades %}
+          <div class="list-row">
+            <span style="min-width:0;overflow:hidden">
+              <span style="color:var(--ink);font-weight:600;font-size:14px">{{ b.name }}</span>
+            </span>
+            <button type="submit" form="remove-{{ b.brigade_id }}"
+                    class="btn-ghost"
+                    style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
+                    onclick="return confirm('Прибрати цю бригаду зі списку користувачів?')">✕</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% elif not all_brigades %}
+      {# all_brigades empty AND brigades empty — all assigned #}
+    {% else %}
+      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодна бригада ще не додана.</div>
+    {% endif %}
+
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" form="main-form" class="btn-primary">
+      {% if equipment %}Зберегти зміни{% else %}Створити{% endif %}
+    </button>
+    <a class="btn-ghost" href="{% if equipment %}/equipment/{{ equipment.equipment_id }}{% else %}/equipment{% endif %}">Скасувати</a>
+  </div>
+</form>
+
+{# ── Прихована форма для додавання бригади + форми видалення ── #}
+{% if equipment %}
+  <form id="add-brigade-form" method="post"
+        action="/equipment/{{ equipment.equipment_id }}/brigades"
+        style="display:none"></form>
+
+  {% for b in brigades %}
+    <form id="remove-{{ b.brigade_id }}" method="post"
+          action="/equipment/{{ equipment.equipment_id }}/brigades/{{ b.brigade_id }}/remove"
+          style="display:none"></form>
+  {% endfor %}
+{% endif %}
+{% endblock %}

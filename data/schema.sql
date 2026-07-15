@@ -53,13 +53,25 @@ CREATE TABLE regions (
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE equipment (
-    equipment_id   INTEGER PRIMARY KEY,
-    name           TEXT NOT NULL UNIQUE,
-    description    TEXT,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE equipment_types (
+    equipment_type_id  INTEGER PRIMARY KEY,
+    type_name          TEXT NOT NULL UNIQUE,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE equipment (
+    equipment_id      INTEGER PRIMARY KEY,
+    name              TEXT NOT NULL UNIQUE,
+    description       TEXT,
+    equipment_type_id INTEGER REFERENCES equipment_types (equipment_type_id),
+    photo             TEXT,
+    adopted_date      DATE, -- дата прийняття на озброєння
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_equipment_equipment_type_id ON equipment (equipment_type_id);
 
 CREATE TABLE traditions (
     tradition_id   INTEGER PRIMARY KEY,

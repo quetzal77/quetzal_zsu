@@ -47,7 +47,7 @@
       <div class="panel">
           <div class="panel__head">Традиції</div>
           {% for tr in traditions %}
-          <div class="list-row {{ 'list-row--with-photo' if (tr.tradition_photo or tr.brigade_tradition_photo) }}">
+          <a class="list-row {{ 'list-row--with-photo' if (tr.tradition_photo or tr.brigade_tradition_photo) }}" href="/traditions/{{ tr.tradition_id }}">
               <span style="display:flex;align-items:center;gap:12px;min-width:0">
                 <span class="dot"></span>
                     {% if tr.title == "Почесне найменування частини" %}
@@ -65,7 +65,7 @@
               {% if tr.brigade_tradition_photo %}
               <img src="/static/img/{{ tr.brigade_tradition_photo }}" alt="{{ tr.title }}">
               {% endif %}
-          </div>
+          </a>
           {% endfor %}
       </div>
       {% endif %}
@@ -86,10 +86,10 @@
     <div class="panel">
       <div class="panel__head">Спорядження</div>
       {% for item in equipment %}
-        <div class="list-row">
+        <a class="list-row" href="/equipment/{{ item.equipment_id }}">
           <span style="display:flex;align-items:center;gap:12px;min-width:0"><span class="dot"></span>
             <span style="color:var(--text)">{{ item.name }}</span></span>
-        </div>
+        </a>
       {% endfor %}
     </div>
     {% endif %}
