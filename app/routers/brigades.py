@@ -139,6 +139,7 @@ def new_brigade_form(
 def create_brigade(
     name: str = Form(...),
     description: Optional[str] = Form(None),
+    emblem_file: Optional[str] = Form(None),
     military_branch_id: Optional[str] = Form(None),
     corps_id: Optional[str] = Form(None),
     territorial_command_id: Optional[str] = Form(None),
@@ -153,12 +154,13 @@ def create_brigade(
     try:
         cur = db.execute(
             """INSERT INTO brigades
-               (name, description, military_branch_id, corps_id, territorial_command_id,
+               (name, description, emblem_file, military_branch_id, corps_id, territorial_command_id,
                 troop_type_id, location_id, formed_date, flag_date, brigade_date)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 name,
                 sanitize_html(description) or None,
+                emblem_file or None,
                 _optional_int(military_branch_id),
                 _optional_int(corps_id),
                 _optional_int(territorial_command_id),
@@ -246,6 +248,7 @@ def update_brigade(
         brigade_id: int,
         name: str = Form(...),
         description: Optional[str] = Form(None),
+        emblem_file: Optional[str] = Form(None),
         military_branch_id: Optional[str] = Form(None),
         corps_id: Optional[str] = Form(None),
         territorial_command_id: Optional[str] = Form(None),
@@ -263,13 +266,14 @@ def update_brigade(
     try:
         db.execute(
             """UPDATE brigades SET
-                   name = ?, description = ?, military_branch_id = ?, corps_id = ?,
+                   name = ?, description = ?, emblem_file = ?, military_branch_id = ?, corps_id = ?,
                    territorial_command_id = ?, troop_type_id = ?, location_id = ?,
                    formed_date = ?, flag_date = ?, brigade_date = ?, updated_at = CURRENT_TIMESTAMP
                WHERE brigade_id = ?""",
             (
                 name,
                 sanitize_html(description) or None,
+                emblem_file or None,
                 _optional_int(military_branch_id),
                 _optional_int(corps_id),
                 _optional_int(territorial_command_id),

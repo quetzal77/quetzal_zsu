@@ -18,6 +18,10 @@
       <label for="description">Опис</label>
       <textarea id="description" name="description" rows="3" placeholder="Коротка історія та призначення з'єднання…">{{ brigade.description or '' }}</textarea>
     </div>
+    <div class="field field--wide">
+      <label for="emblem_file">Емблема (файл у static/img)</label>
+      <input id="emblem_file" name="emblem_file" value="{{ brigade.emblem_file or '' }}" placeholder="напр. brigade-25.png">
+    </div>
 
     <div class="field">
       <label for="military_branch_id">Рід військ</label>
