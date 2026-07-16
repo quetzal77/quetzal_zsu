@@ -64,7 +64,7 @@ def _locations(db: sqlite3.Connection):
     return db.execute(
         """SELECT l.location_id, l.city_name, r.region_name
            FROM locations l JOIN regions r ON l.region_id = r.region_id
-           ORDER BY l.city_name"""
+           ORDER BY l.city_name COLLATE UKRAINIAN"""
     ).fetchall()
 
 

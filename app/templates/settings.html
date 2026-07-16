@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Налаштування — Портал бригад ЗСУ{% endblock %}
+
+{# ── Універсальна секція для довідників виду "id + одна назва" (lookups) ── #}
+{% macro lookup_panel(lu) %}
+  <div class="panel" style="min-width:0">
+    <div class="panel__head">
+      <span>{{ lu.label }}</span>
+      <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ lu.rows|length }}</span>
+    </div>
+    <div class="panel__body">
+      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+        {% for item in lu.rows %}
+          <div class="list-row" style="padding:8px 6px">
+            <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
+                   value="{{ item.name }}"
+                   style="flex:1;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="{{ lu.slug }}-delete-{{ item.id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      onclick="return confirm('Видалити {{ lu.singular }} «{{ item.name }}»?')">✕</button>
+            </span>
+          </div>
+        {% else %}
+          <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодного запису.</div>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="/settings/lookups/{{ lu.slug }}" style="display:flex;gap:8px">
+        <input name="name" required placeholder="Нова назва"
+               style="flex:1;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+      </form>
+    </div>
+  </div>
+  {% for item in lu.rows %}
+    <form id="{{ lu.slug }}-edit-{{ item.id }}" method="post"
+          action="/settings/lookups/{{ lu.slug }}/{{ item.id }}/edit" style="display:none"></form>
+    <form id="{{ lu.slug }}-delete-{{ item.id }}" method="post"
+          action="/settings/lookups/{{ lu.slug }}/{{ item.id }}/delete" style="display:none"></form>
+  {% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="page-eyebrow">Налаштування</div>
+<h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">Керування довідниками</h1>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;align-items:start">
+
+  {# ── Локації (весь перший рядок) ── #}
+  <div class="panel" style="min-width:0;grid-column:1 / -1">
+    <div class="panel__head">
+      <span>Локації</span>
+      <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ locations|length }}</span>
+    </div>
+    <div class="panel__body">
+      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+        {% for l in locations %}
+          <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
+            <input name="city_name" form="location-edit-{{ l.location_id }}" required
+                   value="{{ l.city_name }}"
+                   style="flex:1 1 220px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            <select name="region_id" form="location-edit-{{ l.location_id }}"
+                    style="flex:1 1 220px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+              {% for r in regions %}
+                <option value="{{ r.region_id }}" {{ 'selected' if r.region_id == l.region_id }}>{{ r.region_name }}</option>
+              {% endfor %}
+            </select>
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="submit" form="location-edit-{{ l.location_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="location-delete-{{ l.location_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      onclick="return confirm('Видалити локацію «{{ l.city_name }}»?')">✕</button>
+            </span>
+          </div>
+        {% else %}
+          <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодної локації.</div>
+        {% endfor %}
+      </div>
+
+      {% if regions %}
+        <form method="post" action="/settings/locations" style="display:flex;gap:8px;flex-wrap:wrap">
+          <input name="city_name" required placeholder="Нове місто"
+                 style="flex:1 1 220px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+          <select name="region_id" required
+                  style="flex:1 1 220px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+            {% for r in regions %}
+              <option value="{{ r.region_id }}">{{ r.region_name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+        </form>
+      {% else %}
+        <div style="color:var(--faint);font-size:13px">Спочатку додай хоча б один регіон.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Регіони ── #}
+  <div class="panel" style="min-width:0">
+    <div class="panel__head">
+      <span>Регіони</span>
+      <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ regions|length }}</span>
+    </div>
+    <div class="panel__body">
+      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+        {% for r in regions %}
+          <div class="list-row" style="padding:8px 6px">
+            <input name="region_name" form="region-edit-{{ r.region_id }}" required
+                   value="{{ r.region_name }}"
+                   style="flex:1;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="submit" form="region-edit-{{ r.region_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="region-delete-{{ r.region_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      onclick="return confirm('Видалити регіон «{{ r.region_name }}»?')">✕</button>
+            </span>
+          </div>
+        {% else %}
+          <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодного регіону.</div>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="/settings/regions" style="display:flex;gap:8px">
+        <input name="region_name" required placeholder="Нова назва регіону"
+               style="flex:1;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+      </form>
+    </div>
+  </div>
+
+  {% for lu in lookups %}
+    {{ lookup_panel(lu) }}
+  {% endfor %}
+
+</div>
+
+{# ── Приховані форми для редагування/видалення регіонів ── #}
+{% for r in regions %}
+  <form id="region-edit-{{ r.region_id }}" method="post"
+        action="/settings/regions/{{ r.region_id }}/edit" style="display:none"></form>
+  <form id="region-delete-{{ r.region_id }}" method="post"
+        action="/settings/regions/{{ r.region_id }}/delete" style="display:none"></form>
+{% endfor %}
+
+{# ── Приховані форми для редагування/видалення локацій ── #}
+{% for l in locations %}
+  <form id="location-edit-{{ l.location_id }}" method="post"
+        action="/settings/locations/{{ l.location_id }}/edit" style="display:none"></form>
+  <form id="location-delete-{{ l.location_id }}" method="post"
+        action="/settings/locations/{{ l.location_id }}/delete" style="display:none"></form>
+{% endfor %}
+{% endblock %}

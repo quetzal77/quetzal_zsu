@@ -40,7 +40,7 @@ def _lookups(db: sqlite3.Connection) -> dict:
         "locations": db.execute(
             """SELECT l.location_id, l.city_name, r.region_name
                FROM locations l JOIN regions r ON l.region_id = r.region_id
-               ORDER BY l.city_name"""
+               ORDER BY l.city_name COLLATE UKRAINIAN"""
         ).fetchall(),
     }
 
@@ -104,7 +104,9 @@ def list_brigades(
     query += " ORDER BY CAST(b.name AS INTEGER), b.name"
 
     brigades = db.execute(query, params).fetchall()
-    regions = db.execute("SELECT region_id, region_name FROM regions ORDER BY region_name").fetchall()
+    regions = db.execute(
+        "SELECT region_id, region_name FROM regions ORDER BY region_name COLLATE UKRAINIAN"
+    ).fetchall()
 
     return templates.TemplateResponse(
         request,

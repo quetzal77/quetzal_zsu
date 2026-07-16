@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import NotAuthenticated
-from app.routers import auth, battles, brigades, equipment, stats, traditions
+from app.routers import auth, battles, brigades, equipment, settings, stats, traditions
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -38,6 +38,7 @@ app.include_router(battles.router)
 app.include_router(equipment.router)
 app.include_router(traditions.router)
 app.include_router(stats.router)
+app.include_router(settings.router)
 
 
 @app.get("/")

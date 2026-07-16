@@ -22,6 +22,9 @@
       <a href="/equipment"  class="{{ 'is-active' if path.startswith('/equipment') }}">Спорядження</a>
       <a href="/traditions" class="{{ 'is-active' if path.startswith('/traditions') }}">Традиції</a>
       <a href="/stats"      class="{{ 'is-active' if path.startswith('/stats') }}">Статистика</a>
+      {% if request.session.get('username') %}
+        <a href="/settings" class="{{ 'is-active' if path.startswith('/settings') }}">Налаштування</a>
+      {% endif %}
     </nav>
     <div class="topbar__right">
       <form class="search" method="get" action="/brigades" data-live-search>
@@ -43,6 +46,9 @@
     <a href="/equipment">Спорядження</a>
     <a href="/traditions">Традиції</a>
     <a href="/stats">Статистика</a>
+    {% if request.session.get('username') %}
+      <a href="/settings">Налаштування</a>
+    {% endif %}
     <form class="search" method="get" action="/brigades" data-live-search>
       <input id="search-mobile" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
     </form>
