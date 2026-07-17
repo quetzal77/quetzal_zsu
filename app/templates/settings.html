@@ -56,6 +56,9 @@
       <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ locations|length }}</span>
     </div>
     <div class="panel__body">
+      {% if location_error %}
+      <div class="empty" style="margin:0 0 12px;color:#B3261E">{{ location_error }}</div>
+      {% endif %}
       <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for l in locations %}
           <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">

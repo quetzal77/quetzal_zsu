@@ -69,19 +69,19 @@ def _locations(db: sqlite3.Connection):
     ).fetchall()
 
 
-@router.get("")
-def settings_page(
-    request: Request, db: sqlite3.Connection = Depends(get_db), _user: str = Depends(require_login)
-):
+def _settings_context(db: sqlite3.Connection) -> dict:
     lookups = [
         {"slug": slug, "label": config["label"], "singular": config["singular"], "rows": _lookup_rows(db, slug)}
         for slug, config in _LOOKUP_TABLES.items()
     ]
-    return templates.TemplateResponse(
-        request,
-        "settings.html",
-        {"regions": _regions(db), "locations": _locations(db), "lookups": lookups},
-    )
+    return {"regions": _regions(db), "locations": _locations(db), "lookups": lookups}
+
+
+@router.get("")
+def settings_page(
+    request: Request, db: sqlite3.Connection = Depends(get_db), _user: str = Depends(require_login)
+):
+    return templates.TemplateResponse(request, "settings.html", _settings_context(db))
 
 
 @router.post("/regions")
@@ -132,11 +132,20 @@ def delete_region(
 
 @router.post("/locations")
 def create_location(
+    request: Request,
     city_name: str = Form(...),
     region_id: int = Form(...),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    duplicate = db.execute(
+        "SELECT 1 FROM locations WHERE city_name = ? AND region_id = ?",
+        (city_name, region_id),
+    ).fetchone()
+    if duplicate:
+        context = _settings_context(db)
+        context["location_error"] = f"Місто «{city_name}» вже є в цьому регіоні"
+        return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute(
             "INSERT INTO locations (city_name, region_id) VALUES (?, ?)",
@@ -150,12 +159,21 @@ def create_location(
 
 @router.post("/locations/{location_id}/edit")
 def update_location(
+    request: Request,
     location_id: int,
     city_name: str = Form(...),
     region_id: int = Form(...),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    duplicate = db.execute(
+        "SELECT 1 FROM locations WHERE city_name = ? AND region_id = ? AND location_id != ?",
+        (city_name, region_id, location_id),
+    ).fetchone()
+    if duplicate:
+        context = _settings_context(db)
+        context["location_error"] = f"Місто «{city_name}» вже є в цьому регіоні"
+        return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute(
             """UPDATE locations SET city_name = ?, region_id = ?, updated_at = CURRENT_TIMESTAMP

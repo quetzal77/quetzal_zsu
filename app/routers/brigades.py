@@ -99,9 +99,14 @@ def list_brigades(
         # окремого слова всередині неї (розділювачі — пробіл або дефіс)
         query += " AND (b.name LIKE ? OR b.name LIKE ? OR b.name LIKE ?)"
         params.extend([f"{q}%", f"% {q}%", f"%-{q}%"])
-    # CAST(name AS INTEGER) бере лише провідний номер бригади ("142-га ..." -> 142),
-    # тому сортування виходить числове (15 перед 142), а не лексикографічне ("142" перед "15").
-    query += " ORDER BY CAST(b.name AS INTEGER), b.name"
+    # Спочатку за родом військ (алфавітно, без роду військ — в кінець),
+    # а всередині роду військ — за номером бригади: CAST бере лише провідний номер
+    # ("142-га ..." -> 142), тому сортування виходить числове (15 перед 142), а не
+    # лексикографічне ("142" перед "15").
+    query += """ ORDER BY
+        CASE WHEN mb.branch_name IS NULL THEN 1 ELSE 0 END,
+        mb.branch_name COLLATE UKRAINIAN,
+        CAST(b.name AS INTEGER), b.name"""
 
     brigades = db.execute(query, params).fetchall()
     regions = db.execute(
