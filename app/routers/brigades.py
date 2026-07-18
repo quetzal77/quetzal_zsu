@@ -11,6 +11,14 @@ from app.templates import templates
 
 router = APIRouter(prefix="/brigades", tags=["brigades"])
 
+_FILTER_KEYS = (
+    "military_branch_id",
+    "corps_id",
+    "territorial_command_id",
+    "troop_type_id",
+    "region_id",
+)
+
 
 def _optional_int(value: Optional[str]) -> Optional[int]:
     """HTML <select> sends "" for the "—" option; FastAPI's int parsing rejects
@@ -54,8 +62,41 @@ def list_brigades(
     troop_type_id: Optional[str] = None,
     region_id: Optional[str] = None,
     q: Optional[str] = None,
+    view: Optional[str] = None,
+    panel_open: Optional[str] = None,
     db: sqlite3.Connection = Depends(get_db),
 ):
+    # Якщо запит не містить жодного параметра фільтра/виду (наприклад, перехід за
+    # посиланням "Бригади" в навігації), відновлюємо останній вибраний набір фільтрів
+    # із сесії — так фільтри "переживають" навігацію в межах сесії користувача.
+    qp = request.query_params
+    is_explicit = view is not None or any(key in qp for key in _FILTER_KEYS)
+
+    if is_explicit:
+        request.session["brigade_filters"] = {
+            "military_branch_id": military_branch_id or "",
+            "corps_id": corps_id or "",
+            "territorial_command_id": territorial_command_id or "",
+            "troop_type_id": troop_type_id or "",
+            "region_id": region_id or "",
+        }
+        request.session["brigade_view"] = view or "cards"
+        # Панель фільтрів лишається відкритою лише поки триває робота на сторінці
+        # (кожен вибір чіпа надсилає поточний стан панелі разом із формою). Перехід
+        # на сторінку без параметрів (див. гілку else) завжди її згортає.
+        request.session["brigade_panel_open"] = panel_open == "1"
+    else:
+        saved_filters = request.session.get("brigade_filters", {})
+        military_branch_id = saved_filters.get("military_branch_id") or None
+        corps_id = saved_filters.get("corps_id") or None
+        territorial_command_id = saved_filters.get("territorial_command_id") or None
+        troop_type_id = saved_filters.get("troop_type_id") or None
+        region_id = saved_filters.get("region_id") or None
+        request.session["brigade_panel_open"] = False
+
+    view = request.session.get("brigade_view", "cards")
+    panel_open = request.session.get("brigade_panel_open", False)
+
     military_branch_id = _optional_int(military_branch_id)
     corps_id = _optional_int(corps_id)
     territorial_command_id = _optional_int(territorial_command_id)
@@ -119,6 +160,8 @@ def list_brigades(
         {
             "brigades": brigades,
             "regions": regions,
+            "view": view,
+            "panel_open": panel_open,
             **_lookups(db),
             "filters": {
                 "military_branch_id": military_branch_id,

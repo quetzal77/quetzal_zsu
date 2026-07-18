@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
 {% block content %}
-{% set view = request.query_params.get('view', 'cards') %}
+{% set view = view or 'cards' %}
 {% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.region_id %}
 
 <form method="get" action="/brigades" id="filterform">
   <input type="hidden" name="q" value="{{ request.query_params.get('q','') }}">
+  <input type="hidden" name="panel_open" id="panel_open_input" value="{{ '1' if panel_open else '0' }}">
 
   <div class="page-eyebrow">Реєстр з'єднань</div>
 
   <div class="toolbar">
     <button type="button" class="filters-toggle {{ 'is-on' if has_filters }}"
-            onclick="document.getElementById('filters').classList.toggle('is-hidden')">
+            onclick="var f=document.getElementById('filters'); f.classList.toggle('is-hidden'); document.getElementById('panel_open_input').value = f.classList.contains('is-hidden') ? '0' : '1';">
       Фільтри{% if has_filters %} · активні{% endif %} ▾
     </button>
     <div class="view-toggle">
@@ -25,7 +26,7 @@
 
   </div>
 
-  <div class="filters {{ 'is-hidden' if not has_filters }}" id="filters">
+  <div class="filters {{ 'is-hidden' if not panel_open }}" id="filters">
     <div class="filter-strip">
       <span class="filter-strip__label">Рід військ</span>
       <div class="chips">
