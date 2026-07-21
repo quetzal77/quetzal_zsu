@@ -36,10 +36,12 @@ static/
 └── img/               # нарукавні знаки бригад + логотипи ЗСУ
 data/
 ├── quetzal_zsu.db     # база даних SQLite
-└── schema.sql         # канонічна версійована схема БД
+├── schema.sql         # канонічна версійована схема БД
+└── backups/           # локальні знімки БД (scripts/backup_db.py), поза git
 docs/                  # архітектурний опис, вихідні дані бригад
 .claude/skills/        # Claude Code скіли для розробки
-quetzal_zsu.ps1        # Windows-скрипт: run / stop / check / install
+scripts/backup_db.py   # створює знімок БД у data/backups/
+quetzal_zsu.ps1        # Windows-скрипт: run / stop / check / install / backup
 create_user.py         # CLI для створення/оновлення пароля редактора
 ```
 
@@ -101,6 +103,26 @@ docker run --rm -p 8000:8000 -v "$(pwd)/data:/srv/data" quetzal-zsu
 
 Для імпорту бригад з `docs/brigades.md` (Claude Code): `/add-brigades <назва розділу>`
 Для додавання нарукавного знака (Claude Code): `/add-brigade-emblem`
+
+### Бекап бази даних
+
+`scripts/backup_db.py` робить знімок БД через `sqlite3.Connection.backup()` (безпечно навіть якщо
+сервер працює одночасно) і кладе його в `data/backups/` з таймстампом; лишає автоматично тільки
+останні 30 знімків. Ця тека не в git — головна `data/quetzal_zsu.db` і далі версіонується комітами,
+а `data/backups/` — швидка локальна страхувальна сітка на випадок невдалого імпорту чи ручної правки.
+
+Windows:
+```powershell
+quetzal_zsu backup "перед імпортом 28 дивізії"
+```
+
+Будь-яка ОС:
+```bash
+python scripts/backup_db.py "перед імпортом 28 дивізії"
+```
+
+Нотатка необов'язкова. Варто робити бекап перед великими змінами (`/add-brigades`, ручні SQL-правки,
+зміна схеми) і періодично після сесії дрібних правок через UI.
 
 ## Авторизація
 

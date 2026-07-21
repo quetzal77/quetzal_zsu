@@ -1,8 +1,11 @@
 ﻿
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("run", "check", "install", "stop")]
+    [ValidateSet("run", "check", "install", "stop", "backup")]
     [string]$Command = "run",
+
+    [Parameter(Position = 1)]
+    [string]$Note = "",
 
     [string]$BindHost = "127.0.0.1",
     [int]$Port = 8000,
@@ -71,6 +74,13 @@ if ($Command -eq "stop") {
     Remove-Item $PidFile -ErrorAction SilentlyContinue
     Write-Step "Сервер (PID $savedPid) і його дочірні процеси зупинено."
     exit 0
+}
+
+# --- backup не потребує залежностей проєкту, лише stdlib sqlite3 ---
+if ($Command -eq "backup") {
+    $Python = Get-PythonCommand
+    & $Python (Join-Path $ProjectRoot "scripts\backup_db.py") $Note
+    exit $LASTEXITCODE
 }
 
 $Python = Get-PythonCommand
