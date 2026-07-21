@@ -53,6 +53,8 @@ docs/
 .claude/skills/
     add-brigades/      # /add-brigades <розділ> — імпорт бригад з docs/brigades.md у БД
     add-brigade-emblem/ # /add-brigade-emblem — додавання/нормалізація нарукавного знака
+    research-brigade/  # /research-brigade <назва> — дослідження полів/дат/традицій бригади
+                        # з джерелами, без записів у БД (готує вхід для add-brigades)
 quetzal_zsu.ps1        # Windows helper: run / stop / check / install
 create_user.py         # CLI: python create_user.py <username> — створює/оновлює редактора
 ```
