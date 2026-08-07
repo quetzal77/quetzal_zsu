@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import NotAuthenticated
-from app.routers import auth, battles, brigades, equipment, settings, stats, traditions
+from app.routers import auth, battles, brigades, equipment, settings, stats, traditions, zsu
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -33,6 +33,7 @@ def redirect_to_login(request: Request, exc: NotAuthenticated):
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 app.include_router(auth.router)
+app.include_router(zsu.router)
 app.include_router(brigades.router)
 app.include_router(battles.router)
 app.include_router(equipment.router)
@@ -43,7 +44,7 @@ app.include_router(settings.router)
 
 @app.get("/")
 def root():
-    return RedirectResponse(url="/brigades")
+    return RedirectResponse(url="/zsu")
 
 
 @app.get("/favicon.ico")

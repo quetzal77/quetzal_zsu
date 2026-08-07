@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Збройні Сили України{% endblock %}
+{% block content %}
+<div class="page-eyebrow">Довідник</div>
+<h1 class="page-title">Структура Збройних Сил України</h1>
+
+{% for group in structure %}
+<div class="divider"><span>{{ group.title }}</span></div>
+<div class="tiles">
+  {% for item in group['items'] %}
+  <button type="button" class="tile{% if not item.active %} tile--frozen{% endif %}" data-slug="{{ item.slug }}"{% if not item.active %} disabled{% endif %}>
+    <span class="tile__mark">{{ item.mark }}</span>
+    <span class="tile__body">
+      <span class="tile__name">{{ item.name }}</span>
+      {% if item.hint %}<span class="tile__hint">{{ item.hint }}</span>{% endif %}
+    </span>
+  </button>
+  {% endfor %}
+</div>
+{% endfor %}
+{% endblock %}
