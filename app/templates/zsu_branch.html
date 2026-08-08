@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} — Портал бригад ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="/zsu">← Структура Збройних Сил України</a>
+
+<div class="detail-head detail-head--branch">
+  <div class="branch-media">
+    <span class="detail-emblem branch-emblem {{ 'has-image' if branch and branch.emblem_file }}">
+      {% if branch and branch.emblem_file %}<img src="/static/img/{{ branch.emblem_file }}" alt="Герб: {{ item.name }}">
+      {% else %}{{ item.mark }}{% endif %}
+    </span>
+    {% if branch and branch.flag_file %}
+    <span class="detail-flag"><img src="/static/img/{{ branch.flag_file }}" alt="Прапор: {{ item.name }}"></span>
+    {% endif %}
+  </div>
+  <div class="detail-head__main">
+    <h1>{{ item.name }}</h1>
+    {% if item.hint %}<div class="sub">{{ item.hint }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+
+<div class="grid-cards">
+  {% for b in brigades %}
+    {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
+      <div class="divider"><span>{{ b.troop_type_name or 'Без типу військ' }}</span></div>
+    {% endif %}
+    <a class="card brigade-row" href="/brigades/{{ b.brigade_id }}">
+      <div class="card__head">
+        <span class="emblem {{ 'has-image' if b.emblem_file }}">
+          {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
+        </span>
+        <span class="card__title">
+          <span class="card__name">{{ b.name }}</span>
+        </span>
+      </div>
+    </a>
+  {% else %}
+    <div class="empty" style="grid-column:1/-1">Бригад ще не додано.</div>
+  {% endfor %}
+</div>
+{% endblock %}

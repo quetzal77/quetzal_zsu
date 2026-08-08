@@ -45,6 +45,9 @@ def _lookups(db: sqlite3.Connection) -> dict:
         "troop_types": db.execute(
             "SELECT type_id, type_name FROM troop_types ORDER BY type_name"
         ).fetchall(),
+        "unit_types": db.execute(
+            "SELECT unit_type_id, type_name FROM unit_types ORDER BY unit_type_id"
+        ).fetchall(),
         "locations": db.execute(
             """SELECT l.location_id, l.city_name, r.region_name
                FROM locations l JOIN regions r ON l.region_id = r.region_id
@@ -198,6 +201,7 @@ def create_brigade(
     formed_date: Optional[str] = Form(None),
     flag_date: Optional[str] = Form(None),
     brigade_date: Optional[str] = Form(None),
+    unit_type_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -205,8 +209,8 @@ def create_brigade(
         cur = db.execute(
             """INSERT INTO brigades
                (name, description, emblem_file, military_branch_id, corps_id, territorial_command_id,
-                troop_type_id, location_id, formed_date, flag_date, brigade_date)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                troop_type_id, location_id, formed_date, flag_date, brigade_date, unit_type_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 name,
                 sanitize_html(description) or None,
@@ -219,6 +223,7 @@ def create_brigade(
                 formed_date or None,
                 flag_date or None,
                 brigade_date or None,
+                _optional_int(unit_type_id),
             ),
         )
         db.commit()
@@ -231,7 +236,7 @@ def create_brigade(
 def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     brigade = db.execute(
         """SELECT b.*, mb.branch_name, ac.corps_name, tc.command_name, tt.type_name,
-                  l.city_name, r.region_name,
+                  l.city_name, r.region_name, ut.type_name AS unit_type_name,
                   (
                       SELECT bt.unit_name
                       FROM brigade_traditions bt
@@ -246,6 +251,7 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
            LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
            LEFT JOIN locations l ON b.location_id = l.location_id
            LEFT JOIN regions r ON l.region_id = r.region_id
+           LEFT JOIN unit_types ut ON b.unit_type_id = ut.unit_type_id
            WHERE b.brigade_id = ?""",
         (brigade_id,),
     ).fetchone()
@@ -307,6 +313,7 @@ def update_brigade(
         formed_date: Optional[str] = Form(None),
         flag_date: Optional[str] = Form(None),
         brigade_date: Optional[str] = Form(None),
+        unit_type_id: Optional[str] = Form(None),
         photo_0: Optional[str] = Form(None),
         photo_1: Optional[str] = Form(None),
         photo_2: Optional[str] = Form(None),
@@ -318,7 +325,7 @@ def update_brigade(
             """UPDATE brigades SET
                    name = ?, description = ?, emblem_file = ?, military_branch_id = ?, corps_id = ?,
                    territorial_command_id = ?, troop_type_id = ?, location_id = ?,
-                   formed_date = ?, flag_date = ?, brigade_date = ?, updated_at = CURRENT_TIMESTAMP
+                   formed_date = ?, flag_date = ?, brigade_date = ?, unit_type_id = ?, updated_at = CURRENT_TIMESTAMP
                WHERE brigade_id = ?""",
             (
                 name,
@@ -332,6 +339,7 @@ def update_brigade(
                 formed_date or None,
                 flag_date or None,
                 brigade_date or None,
+                _optional_int(unit_type_id),
                 brigade_id,
             ),
         )

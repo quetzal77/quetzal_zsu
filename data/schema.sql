@@ -22,7 +22,9 @@ CREATE TABLE military_branches (
     branch_id      INTEGER PRIMARY KEY,
     branch_name    TEXT NOT NULL UNIQUE,
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    emblem_file    TEXT, -- посилання/ім'я файлу герба роду військ
+    flag_file      TEXT  -- посилання/ім'я файлу прапора роду військ
 );
 
 CREATE TABLE territorial_commands (
@@ -42,6 +44,13 @@ CREATE TABLE army_corps (
 CREATE TABLE troop_types (
     type_id        INTEGER PRIMARY KEY,
     type_name      TEXT NOT NULL UNIQUE,
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE unit_types (
+    unit_type_id   INTEGER PRIMARY KEY,
+    type_name      TEXT NOT NULL UNIQUE, -- Бригада / Полк / Батальон
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -129,6 +138,7 @@ CREATE TABLE brigades (
     brigade_date             DATE, -- дата, коли підрозділ став бригадою; якщо порожньо, на списках показується formed_date
     location_id              INTEGER REFERENCES locations (location_id),
     emblem_file              TEXT,
+    unit_type_id             INTEGER REFERENCES unit_types (unit_type_id), -- Бригада / Полк / Батальон
     created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (formed_date IS NULL OR flag_date IS NULL OR formed_date <= flag_date)
@@ -139,6 +149,7 @@ CREATE INDEX idx_brigades_corps_id ON brigades (corps_id);
 CREATE INDEX idx_brigades_territorial_command_id ON brigades (territorial_command_id);
 CREATE INDEX idx_brigades_troop_type_id ON brigades (troop_type_id);
 CREATE INDEX idx_brigades_location_id ON brigades (location_id);
+CREATE INDEX idx_brigades_unit_type_id ON brigades (unit_type_id);
 
 -- ---------------------------------------------------------------------
 -- Junction tables (many-to-many)

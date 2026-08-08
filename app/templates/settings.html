@@ -3,18 +3,23 @@
 
 {# ── Універсальна секція для довідників виду "id + одна назва" (lookups) ── #}
 {% macro lookup_panel(lu) %}
-  <div class="panel" style="min-width:0">
+  <div class="panel" style="min-width:0{{ ';grid-column:1 / -1' if lu.wide }}">
     <div class="panel__head">
       <span>{{ lu.label }}</span>
       <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ lu.rows|length }}</span>
     </div>
     <div class="panel__body">
-      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+      <div style="max-height:{{ '140px' if lu.wide else '230px' }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for item in lu.rows %}
-          <div class="list-row" style="padding:8px 6px">
+          <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
             <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
                    value="{{ item.name }}"
-                   style="flex:1;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+                   style="flex:1 1 160px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            {% for ec in lu.extra_cols %}
+            <input name="{{ ec.col }}" form="{{ lu.slug }}-edit-{{ item.id }}"
+                   value="{{ item[ec.col] or '' }}" placeholder="{{ ec.label }} (файл/URL)"
+                   style="flex:1 1 140px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            {% endfor %}
             <span style="display:flex;gap:6px;flex:none">
               <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
                       class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
@@ -28,9 +33,13 @@
         {% endfor %}
       </div>
 
-      <form method="post" action="/settings/lookups/{{ lu.slug }}" style="display:flex;gap:8px">
+      <form method="post" action="/settings/lookups/{{ lu.slug }}" style="display:flex;gap:8px;flex-wrap:wrap">
         <input name="name" required placeholder="Нова назва"
-               style="flex:1;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+               style="flex:1 1 160px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        {% for ec in lu.extra_cols %}
+        <input name="{{ ec.col }}" placeholder="{{ ec.label }} (файл/URL)"
+               style="flex:1 1 140px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        {% endfor %}
         <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
       </form>
     </div>
@@ -59,7 +68,7 @@
       {% if location_error %}
       <div class="empty" style="margin:0 0 12px;color:#B3261E">{{ location_error }}</div>
       {% endif %}
-      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+      <div style="max-height:140px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for l in locations %}
           <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
             <input name="city_name" form="location-edit-{{ l.location_id }}" required
@@ -102,6 +111,10 @@
     </div>
   </div>
 
+  {% for lu in lookups if lu.slug == 'military-branches' %}
+    {{ lookup_panel(lu) }}
+  {% endfor %}
+
   {# ── Регіони ── #}
   <div class="panel" style="min-width:0">
     <div class="panel__head">
@@ -136,7 +149,7 @@
     </div>
   </div>
 
-  {% for lu in lookups %}
+  {% for lu in lookups if lu.slug != 'military-branches' %}
     {{ lookup_panel(lu) }}
   {% endfor %}
 

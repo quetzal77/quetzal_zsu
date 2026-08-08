@@ -60,6 +60,15 @@
       </select>
     </div>
     <div class="field">
+      <label for="unit_type_id">Тип з'єднання</label>
+      <select id="unit_type_id" name="unit_type_id">
+        <option value="">—</option>
+        {% for ut in unit_types %}
+        <option value="{{ ut.unit_type_id }}" {{ 'selected' if brigade and brigade.unit_type_id == ut.unit_type_id }}>{{ ut.type_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
       <label for="location_id">ППД</label>
       <select id="location_id" name="location_id">
         <option value="">—</option>
@@ -73,12 +82,12 @@
       <input id="formed_date" name="formed_date" class="mono" value="{{ brigade.formed_date or '' }}" placeholder="РРРР-ММ-ДД">
     </div>
     <div class="field">
-      <label for="flag_date">Бойовий прапор (РРРР-ММ-ДД)</label>
-      <input id="flag_date" name="flag_date" class="mono" value="{{ brigade.flag_date or '' }}" placeholder="РРРР-ММ-ДД">
-    </div>
-    <div class="field">
       <label for="brigade_date">Стала бригадою (РРРР-ММ-ДД)</label>
       <input id="brigade_date" name="brigade_date" class="mono" value="{{ brigade.brigade_date or '' }}" placeholder="РРРР-ММ-ДД">
+    </div>
+    <div class="field">
+      <label for="flag_date">Бойовий прапор (РРРР-ММ-ДД)</label>
+      <input id="flag_date" name="flag_date" class="mono" value="{{ brigade.flag_date or '' }}" placeholder="РРРР-ММ-ДД">
     </div>
   </div>
 

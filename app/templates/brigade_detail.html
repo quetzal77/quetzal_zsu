@@ -35,10 +35,11 @@
         <div class="row"><dt>Корпус</dt><dd>{{ brigade.corps_name or '—' }}</dd></div>
         <div class="row"><dt>Тер. командування</dt><dd>{{ brigade.command_name or '—' }}</dd></div>
         <div class="row"><dt>Тип військ</dt><dd>{{ brigade.type_name or '—' }}</dd></div>
+        <div class="row"><dt>Тип з'єднання</dt><dd>{{ brigade.unit_type_name or '—' }}</dd></div>
         <div class="row"><dt>ППД</dt><dd>{{ brigade.city_name or '—' }}{% if brigade.region_name %}, {{ brigade.region_name }}{% endif %}</dd></div>
         <div class="row"><dt>Засновано</dt><dd class="mono">{{ brigade.formed_date or '—' }}</dd></div>
-        <div class="row"><dt>Бойовий прапор</dt><dd class="mono">{{ brigade.flag_date or '—' }}</dd></div>
         <div class="row"><dt>Стала бригадою</dt><dd class="mono">{{ brigade.brigade_date or '—' }}</dd></div>
+        <div class="row"><dt>Бойовий прапор</dt><dd class="mono">{{ brigade.flag_date or '—' }}</dd></div>
       </dl>
     </div>
 

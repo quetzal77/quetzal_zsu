@@ -145,6 +145,8 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .tile:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: var(--shadow-h); }
 .tile:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .tile__mark { flex: none; width: 38px; height: 38px; display: grid; place-items: center; background: linear-gradient(140deg,var(--green),var(--green-light)); clip-path: polygon(0 0,100% 0,100% 76%,76% 100%,0 100%); color: #fff; font-weight: 700; font-size: 13px; font-family: var(--mono); }
+.tile__mark--icon { background: none; clip-path: none; }
+.tile__mark--icon img { width: 32px; height: 32px; object-fit: contain; }
 .tile__body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .tile__name { color: var(--ink); font-weight: 700; font-size: 14.5px; line-height: 1.3; }
 .tile__hint { color: var(--faint); font-size: 11px; letter-spacing: 0.03em; }
@@ -177,6 +179,12 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .detail-emblem img { width: 100%; height: 100%; object-fit: cover; }
 .detail-emblem.has-image { height: 142.08px; background: transparent; border: none; border-radius: 0; }
 .detail-emblem.has-image img { width: 100%; height: 100%; object-fit: contain; padding: 6px; box-sizing: border-box; }
+.branch-media { display: flex; align-items: stretch; gap: 14px; flex: none; }
+.detail-emblem.branch-emblem, .detail-emblem.branch-emblem.has-image { height: 128px; background: var(--card); border: 1px solid var(--line); border-radius: 4px; }
+.detail-emblem.branch-emblem.has-image img { object-fit: contain; padding: 14px; box-sizing: border-box; }
+.detail-flag { flex: none; width: 220px; height: 128px; display: grid; place-items: center; background: #14100C; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.detail-flag img { width: 100%; height: 100%; object-fit: contain; padding: 6px; box-sizing: border-box; }
+.detail-head--branch { align-items: center; }
 .detail-head__main { flex: 1; min-width: 260px; }
 .detail-eyebrow { color: var(--faint); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
 .detail-head__main h1 { margin: 0 0 6px; font-size: 32px; font-weight: 700; color: var(--ink); line-height: 1.05; }
