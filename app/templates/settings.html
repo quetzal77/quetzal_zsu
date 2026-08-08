@@ -1,24 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Налаштування — Портал бригад ЗСУ{% endblock %}
 
-{# ── Універсальна секція для довідників виду "id + одна назва" (lookups) ── #}
-{% macro lookup_panel(lu) %}
+{# ── Універсальна секція для довідників виду "id + одна назва" (lookups),
+     опційно з додатковими колонками (текст/дата/локація). mode="grid" —
+     поле займає всю комірку фіксованого гріда (wide-панелі, багато полів);
+     mode="flex" — гнучка ширина в звичайному flex-рядку (1-2 додаткових поля). ── #}
+{% macro extra_field(ec, form_id, value, locations, mode='grid') %}
+  {% set sizing = 'width:100%;box-sizing:border-box' if mode == 'grid' else 'flex:1 1 140px;min-width:0' %}
+  {% set form_attr = (' form="' ~ form_id ~ '"') if form_id else '' %}
+  {% if ec.type == 'location' %}
+    <select name="{{ ec.col }}"{{ form_attr|safe }}
+            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+      <option value="">{{ ec.label }}: —</option>
+      {% for l in locations %}
+        <option value="{{ l.location_id }}" {{ 'selected' if value == l.location_id }}>{{ l.city_name }}, {{ l.region_name }}</option>
+      {% endfor %}
+    </select>
+  {% elif ec.type == 'date' %}
+    <input name="{{ ec.col }}"{{ form_attr|safe }} class="mono" value="{{ value or '' }}" placeholder="{{ ec.label }} (РРРР-ММ-ДД)"
+           style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+  {% else %}
+    <input name="{{ ec.col }}"{{ form_attr|safe }} value="{{ value or '' }}" placeholder="{{ ec.label }} (файл/URL)"
+           style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+  {% endif %}
+{% endmacro %}
+
+{# Wide-довідники з багатьма додатковими полями (зараз — Роди військ)
+   розкладаються в фіксований грід 4 колонки: назва + перші 3 додаткові поля
+   в першому рядку, решта полів і кнопки дій — у другому. Інакше 6+ полів в
+   один flex-рядок не влазять і обрізаються за межею плашки. Вузькі довідники
+   з 1-2 додатковими полями (напр. Типи бригад) лишаються звичайним
+   flex-рядком, що переноситься за потреби. #}
+{% macro lookup_panel(lu, locations=[]) %}
   <div class="panel" style="min-width:0{{ ';grid-column:1 / -1' if lu.wide }}">
     <div class="panel__head">
       <span>{{ lu.label }}</span>
       <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ lu.rows|length }}</span>
     </div>
     <div class="panel__body">
-      <div style="max-height:{{ '140px' if lu.wide else '230px' }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+      <div style="max-height:{{ '320px' if lu.wide else '230px' }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for item in lu.rows %}
+          {% if lu.wide %}
+          <div class="lookup-grid-row">
+            <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
+                   value="{{ item.name }}" class="lookup-grid-row__name"
+                   style="font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            {% for ec in lu.extra_cols %}
+              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations) }}
+            {% endfor %}
+            <span class="lookup-grid-row__actions">
+              <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="{{ lu.slug }}-delete-{{ item.id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      onclick="return confirm('Видалити {{ lu.singular }} «{{ item.name }}»?')">✕</button>
+            </span>
+          </div>
+          {% else %}
           <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
             <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
                    value="{{ item.name }}"
                    style="flex:1 1 160px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
             {% for ec in lu.extra_cols %}
-            <input name="{{ ec.col }}" form="{{ lu.slug }}-edit-{{ item.id }}"
-                   value="{{ item[ec.col] or '' }}" placeholder="{{ ec.label }} (файл/URL)"
-                   style="flex:1 1 140px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, mode='flex') }}
             {% endfor %}
             <span style="display:flex;gap:6px;flex:none">
               <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
@@ -28,20 +72,31 @@
                       onclick="return confirm('Видалити {{ lu.singular }} «{{ item.name }}»?')">✕</button>
             </span>
           </div>
+          {% endif %}
         {% else %}
           <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодного запису.</div>
         {% endfor %}
       </div>
 
+      {% if lu.wide %}
+      <form method="post" action="/settings/lookups/{{ lu.slug }}" id="{{ lu.slug }}-create" class="lookup-grid-row" style="padding:0">
+        <input name="name" form="{{ lu.slug }}-create" required placeholder="Нова назва" class="lookup-grid-row__name"
+               style="font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        {% for ec in lu.extra_cols %}
+          {{ extra_field(ec, lu.slug ~ '-create', None, locations) }}
+        {% endfor %}
+        <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+      </form>
+      {% else %}
       <form method="post" action="/settings/lookups/{{ lu.slug }}" style="display:flex;gap:8px;flex-wrap:wrap">
         <input name="name" required placeholder="Нова назва"
                style="flex:1 1 160px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
         {% for ec in lu.extra_cols %}
-        <input name="{{ ec.col }}" placeholder="{{ ec.label }} (файл/URL)"
-               style="flex:1 1 140px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+          {{ extra_field(ec, None, None, locations, mode='flex') }}
         {% endfor %}
         <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
       </form>
+      {% endif %}
     </div>
   </div>
   {% for item in lu.rows %}
@@ -56,7 +111,11 @@
 <div class="page-eyebrow">Налаштування</div>
 <h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">Керування довідниками</h1>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;align-items:start">
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;align-items:start">
+
+  {% for lu in lookups if lu.slug == 'military-branches' %}
+    {{ lookup_panel(lu, locations) }}
+  {% endfor %}
 
   {# ── Локації (весь перший рядок) ── #}
   <div class="panel" style="min-width:0;grid-column:1 / -1">
@@ -111,10 +170,6 @@
     </div>
   </div>
 
-  {% for lu in lookups if lu.slug == 'military-branches' %}
-    {{ lookup_panel(lu) }}
-  {% endfor %}
-
   {# ── Регіони ── #}
   <div class="panel" style="min-width:0">
     <div class="panel__head">
@@ -150,7 +205,7 @@
   </div>
 
   {% for lu in lookups if lu.slug != 'military-branches' %}
-    {{ lookup_panel(lu) }}
+    {{ lookup_panel(lu, locations) }}
   {% endfor %}
 
 </div>

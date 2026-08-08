@@ -19,7 +19,7 @@
         </div>
         {% endif %}
       </div>
-      {% if equipment.adopted_date %}<div class="sub" style="margin-top:8px">На озброєнні з <span class="mono">{{ equipment.adopted_date }}</span></div>{% endif %}
+      {% if equipment.adopted_date %}<div class="sub" style="margin-top:8px">На озброєнні з <span class="mono">{{ equipment.adopted_date | uk_date }}</span></div>{% endif %}
       {% if equipment.description %}<div class="sub" style="margin-top:8px">{{ equipment.description|safe }}</div>{% endif %}
     </div>
   </div>

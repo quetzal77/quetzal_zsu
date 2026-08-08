@@ -2,7 +2,7 @@
 {% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
 {% block content %}
 {% set view = view or 'cards' %}
-{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.region_id %}
+{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.unit_type_id or filters.region_id %}
 
 <form method="get" action="/brigades" id="filterform">
   <input type="hidden" name="q" value="{{ request.query_params.get('q','') }}">
@@ -71,6 +71,18 @@
         {% for tt in troop_types %}
         <label class="chip {{ 'is-active' if filters.troop_type_id == tt.type_id }}">
           <input type="radio" name="troop_type_id" value="{{ tt.type_id }}" {{ 'checked' if filters.troop_type_id == tt.type_id }} onchange="this.form.submit()" hidden>{{ tt.type_name }}</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-strip">
+      <span class="filter-strip__label">Тип з'єднань</span>
+      <div class="chips">
+        <label class="chip {{ 'is-active' if not filters.unit_type_id }}">
+          <input type="radio" name="unit_type_id" value="" {{ 'checked' if not filters.unit_type_id }} onchange="this.form.submit()" hidden>Усі</label>
+        {% for ut in unit_types %}
+        <label class="chip {{ 'is-active' if filters.unit_type_id == ut.unit_type_id }}">
+          <input type="radio" name="unit_type_id" value="{{ ut.unit_type_id }}" {{ 'checked' if filters.unit_type_id == ut.unit_type_id }} onchange="this.form.submit()" hidden>{{ ut.type_name }}</label>
         {% endfor %}
       </div>
     </div>

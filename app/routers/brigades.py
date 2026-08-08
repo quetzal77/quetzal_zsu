@@ -16,6 +16,7 @@ _FILTER_KEYS = (
     "corps_id",
     "territorial_command_id",
     "troop_type_id",
+    "unit_type_id",
     "region_id",
 )
 
@@ -63,6 +64,7 @@ def list_brigades(
     corps_id: Optional[str] = None,
     territorial_command_id: Optional[str] = None,
     troop_type_id: Optional[str] = None,
+    unit_type_id: Optional[str] = None,
     region_id: Optional[str] = None,
     q: Optional[str] = None,
     view: Optional[str] = None,
@@ -81,6 +83,7 @@ def list_brigades(
             "corps_id": corps_id or "",
             "territorial_command_id": territorial_command_id or "",
             "troop_type_id": troop_type_id or "",
+            "unit_type_id": unit_type_id or "",
             "region_id": region_id or "",
         }
         request.session["brigade_view"] = view or "cards"
@@ -94,6 +97,7 @@ def list_brigades(
         corps_id = saved_filters.get("corps_id") or None
         territorial_command_id = saved_filters.get("territorial_command_id") or None
         troop_type_id = saved_filters.get("troop_type_id") or None
+        unit_type_id = saved_filters.get("unit_type_id") or None
         region_id = saved_filters.get("region_id") or None
         request.session["brigade_panel_open"] = False
 
@@ -104,6 +108,7 @@ def list_brigades(
     corps_id = _optional_int(corps_id)
     territorial_command_id = _optional_int(territorial_command_id)
     troop_type_id = _optional_int(troop_type_id)
+    unit_type_id = _optional_int(unit_type_id)
     region_id = _optional_int(region_id)
 
     query = """
@@ -135,6 +140,9 @@ def list_brigades(
     if troop_type_id:
         query += " AND b.troop_type_id = ?"
         params.append(troop_type_id)
+    if unit_type_id:
+        query += " AND b.unit_type_id = ?"
+        params.append(unit_type_id)
     if region_id:
         query += " AND l.region_id = ?"
         params.append(region_id)
@@ -171,6 +179,7 @@ def list_brigades(
                 "corps_id": corps_id,
                 "territorial_command_id": territorial_command_id,
                 "troop_type_id": troop_type_id,
+                "unit_type_id": unit_type_id,
                 "region_id": region_id,
             },
         },

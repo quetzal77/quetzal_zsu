@@ -18,10 +18,14 @@ _LOOKUP_TABLES = {
         "table": "military_branches", "id_col": "branch_id", "name_col": "branch_name",
         "label": "Роди військ", "singular": "рід військ",
         "extra_cols": [
+            {"col": "founded_date", "label": "Дата заснування", "type": "date"},
+            {"col": "hq_location_id", "label": "Штаб", "type": "location"},
             {"col": "emblem_file", "label": "Герб"},
             {"col": "flag_file", "label": "Прапор"},
+            {"col": "patch_file", "label": "Нарукавний знак"},
+            {"col": "beret_badge_file", "label": "Беретний знак"},
         ],
-        "wide": True,  # забагато полів в рядку (назва + герб + прапор) для вузької колонки
+        "wide": True,  # забагато полів в рядку для вузької колонки
     },
     "army-corps": {
         "table": "army_corps", "id_col": "corps_id", "name_col": "corps_name",
@@ -34,6 +38,9 @@ _LOOKUP_TABLES = {
     "troop-types": {
         "table": "troop_types", "id_col": "type_id", "name_col": "type_name",
         "label": "Типи бригад", "singular": "тип бригади",
+        "extra_cols": [
+            {"col": "collar_emblem_file", "label": "Комірна емблема"},
+        ],
     },
     "unit-types": {
         "table": "unit_types", "id_col": "unit_type_id", "name_col": "type_name",
@@ -44,6 +51,17 @@ _LOOKUP_TABLES = {
         "label": "Типи спорядження", "singular": "тип спорядження",
     },
 }
+
+
+def _optional_int(value: Optional[str]) -> Optional[int]:
+    """HTML <select> sends "" for the "—" option; FastAPI's int parsing rejects
+    that before it reaches our code, so these fields must arrive as str."""
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def _lookup_config(slug: str) -> dict:
@@ -220,20 +238,41 @@ def delete_location(
     return RedirectResponse(url="/settings", status_code=303)
 
 
+def _extra_col_values(config: dict, form_values: dict) -> list:
+    """Convert raw form strings to DB-ready values per column type: "location"
+    columns are FK ints (like brigades' Optional[str] -> Optional[int] fields),
+    everything else (text/date, both stored as plain TEXT) passes through as-is."""
+    values = []
+    for ec in config.get("extra_cols", []):
+        raw = form_values.get(ec["col"])
+        values.append(_optional_int(raw) if ec.get("type") == "location" else (raw or None))
+    return values
+
+
 @router.post("/lookups/{slug}")
 def create_lookup_item(
     slug: str,
     name: str = Form(...),
+    founded_date: Optional[str] = Form(None),
+    hq_location_id: Optional[str] = Form(None),
     emblem_file: Optional[str] = Form(None),
     flag_file: Optional[str] = Form(None),
+    patch_file: Optional[str] = Form(None),
+    beret_badge_file: Optional[str] = Form(None),
+    collar_emblem_file: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
     config = _lookup_config(slug)
-    form_values = {"emblem_file": emblem_file, "flag_file": flag_file}
+    form_values = {
+        "founded_date": founded_date, "hq_location_id": hq_location_id,
+        "emblem_file": emblem_file, "flag_file": flag_file,
+        "patch_file": patch_file, "beret_badge_file": beret_badge_file,
+        "collar_emblem_file": collar_emblem_file,
+    }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     cols = [config["name_col"], *extra_cols]
-    values = [name, *(form_values.get(col) or None for col in extra_cols)]
+    values = [name, *_extra_col_values(config, form_values)]
     placeholders = ", ".join("?" for _ in cols)
     try:
         db.execute(
@@ -250,16 +289,26 @@ def update_lookup_item(
     slug: str,
     item_id: int,
     name: str = Form(...),
+    founded_date: Optional[str] = Form(None),
+    hq_location_id: Optional[str] = Form(None),
     emblem_file: Optional[str] = Form(None),
     flag_file: Optional[str] = Form(None),
+    patch_file: Optional[str] = Form(None),
+    beret_badge_file: Optional[str] = Form(None),
+    collar_emblem_file: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
     config = _lookup_config(slug)
-    form_values = {"emblem_file": emblem_file, "flag_file": flag_file}
+    form_values = {
+        "founded_date": founded_date, "hq_location_id": hq_location_id,
+        "emblem_file": emblem_file, "flag_file": flag_file,
+        "patch_file": patch_file, "beret_badge_file": beret_badge_file,
+        "collar_emblem_file": collar_emblem_file,
+    }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     set_clause = ", ".join(f"{col} = ?" for col in [config["name_col"], *extra_cols])
-    values = [name, *(form_values.get(col) or None for col in extra_cols), item_id]
+    values = [name, *_extra_col_values(config, form_values), item_id]
     try:
         db.execute(
             f"UPDATE {config['table']} SET {set_clause}, updated_at = CURRENT_TIMESTAMP "

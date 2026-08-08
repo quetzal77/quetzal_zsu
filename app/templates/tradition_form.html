@@ -83,7 +83,7 @@
             <span style="min-width:0;overflow:hidden">
               <span style="color:var(--ink);font-weight:600;font-size:14px">{{ b.name }}</span>
               {% if b.date_assigned %}
-                <span class="mono" style="color:var(--faint);font-size:12px;margin-left:10px">{{ b.date_assigned }}</span>
+                <span class="mono" style="color:var(--faint);font-size:12px;margin-left:10px">{{ b.date_assigned | uk_date }}</span>
               {% endif %}
             </span>
             <span style="display:flex;align-items:center;gap:8px">

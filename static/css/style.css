@@ -112,6 +112,8 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .grid-cards .divider { grid-column: 1 / -1; }
 .divider span { color: var(--ghost); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; white-space: nowrap; }
 .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.divider__collar { width: 80px; height: 80px; object-fit: contain; flex: none; }
+.divider:has(.divider__collar) span { font-size: 20px; letter-spacing: 0.02em; text-transform: none; font-weight: 700; }
 
 /* ---------- Cards ---------- */
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 16px; }
@@ -198,6 +200,27 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 
 .cols-2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 24px; align-items: start; }
 .cols-2--battle { grid-template-columns: 1.25fr 0.75fr; }
+.cols-2--branch { grid-template-columns: 300px 1fr; }
+
+.branch-info { padding: 22px 18px; display: flex; flex-direction: column; }
+.branch-info__row { display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; padding: 22px 0; border-bottom: 1px solid var(--line-3); }
+.branch-info__row:first-child { padding-top: 0; }
+.branch-info__row:last-child { border-bottom: none; padding-bottom: 0; }
+.branch-info__row dt { color: var(--faint); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; margin: 0; max-width: 130px; text-align: center; line-height: 1.3; }
+.branch-info__row dd { margin: 0; display: flex; justify-content: center; }
+.branch-info__value { font-size: 20px; font-weight: 700; color: var(--ink); font-family: var(--mono); text-align: center; }
+.branch-info__value--text { font-family: inherit; font-size: 16px; }
+/* Кожен тип зображення має свою пропорцію контейнера (герб/квадратний,
+   нарукавний-беретний знаки/портретна форма щита, прапор/альбомна) —
+   інакше object-fit: contain з невідповідним по формі контейнером притискає
+   картинку впритул до однієї з граней (немає "повітря" з того боку, де
+   пропорція контейнера не збігається з пропорцією зображення). */
+.branch-info__thumb { flex: none; width: 100%; max-width: 210px; display: grid; place-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; color: var(--ink); font-weight: 700; font-size: 15px; font-family: var(--mono); }
+.branch-info__thumb img { width: 100%; height: 100%; object-fit: contain; padding: 18px; box-sizing: border-box; }
+.branch-info__thumb--square { aspect-ratio: 1 / 1; }
+.branch-info__thumb--patch { aspect-ratio: 4 / 5; }
+.branch-info__thumb--flag { max-width: 230px; aspect-ratio: 8 / 5; background: #14100C; }
+.branch-info__thumb--flag img { padding: 10px; }
 .panel { background: #fff; border: 1px solid var(--line); border-radius: 3px; box-shadow: var(--shadow); }
 .panel__head { padding: 14px 18px; border-bottom: 1px solid var(--line-2); color: var(--faint); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
 .panel__body { padding: 18px; }
@@ -213,6 +236,11 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .list-row--with-photo { flex-direction: column; align-items: stretch; }
 .list-row--with-photo img { width: 50%; height: auto; border-radius: 4px; display: block; align-self: center; }
 .list-row .dot { width: 6px; height: 6px; background: var(--green); flex: none; transform: rotate(45deg); }
+.lookup-grid-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 10px; align-items: center; padding: 10px 6px; border-bottom: 1px solid var(--line-3); }
+.lookup-grid-row:last-child { border-bottom: none; }
+.lookup-grid-row:hover { background: #F6F8FB; }
+.lookup-grid-row__name { font-weight: 600; }
+.lookup-grid-row__actions { display: flex; gap: 6px; justify-content: flex-end; }
 .chip-list { display: flex; flex-wrap: wrap; gap: 7px; }
 .gallery { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 12px; }
 .gallery .slot { aspect-ratio: 16/10; background: var(--line-3); border: 1px dashed var(--input); border-radius: 4px; display: grid; place-items: center; color: var(--ghost); font-size: 12px; overflow: hidden; }
@@ -292,6 +320,6 @@ footer .mono { font-family: var(--mono); }
   .menu-toggle { display: grid; }
   .mobile-menu.is-open { display: block; }
   main { padding: 24px 16px 64px; }
-  .cols-2 { grid-template-columns: 1fr; }
+  .cols-2, .cols-2--branch { grid-template-columns: 1fr; }
   .timeline__node { min-width: 140px; }
 }

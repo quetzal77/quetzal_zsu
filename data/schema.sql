@@ -19,12 +19,16 @@ CREATE TABLE users (
 -- ---------------------------------------------------------------------
 
 CREATE TABLE military_branches (
-    branch_id      INTEGER PRIMARY KEY,
-    branch_name    TEXT NOT NULL UNIQUE,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    emblem_file    TEXT, -- посилання/ім'я файлу герба роду військ
-    flag_file      TEXT  -- посилання/ім'я файлу прапора роду військ
+    branch_id          INTEGER PRIMARY KEY,
+    branch_name        TEXT NOT NULL UNIQUE,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    emblem_file        TEXT, -- посилання/ім'я файлу герба роду військ
+    flag_file          TEXT, -- посилання/ім'я файлу прапора роду військ
+    founded_date       DATE,
+    hq_location_id     INTEGER REFERENCES locations (location_id), -- локація штабу
+    patch_file         TEXT, -- посилання/ім'я файлу нарукавного знака
+    beret_badge_file   TEXT  -- посилання/ім'я файлу беретного знака
 );
 
 CREATE TABLE territorial_commands (
@@ -42,10 +46,11 @@ CREATE TABLE army_corps (
 );
 
 CREATE TABLE troop_types (
-    type_id        INTEGER PRIMARY KEY,
-    type_name      TEXT NOT NULL UNIQUE,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    type_id              INTEGER PRIMARY KEY,
+    type_name            TEXT NOT NULL UNIQUE,
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    collar_emblem_file   TEXT -- посилання/ім'я файлу комірної емблеми
 );
 
 CREATE TABLE unit_types (
@@ -106,6 +111,7 @@ CREATE TABLE locations (
 );
 
 CREATE INDEX idx_locations_region_id ON locations (region_id);
+CREATE INDEX idx_military_branches_hq_location_id ON military_branches (hq_location_id);
 
 -- ---------------------------------------------------------------------
 -- Core entities

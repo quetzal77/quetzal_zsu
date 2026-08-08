@@ -3,41 +3,86 @@
 {% block content %}
 <a class="back-link" href="/zsu">← Структура Збройних Сил України</a>
 
-<div class="detail-head detail-head--branch">
-  <div class="branch-media">
-    <span class="detail-emblem branch-emblem {{ 'has-image' if branch and branch.emblem_file }}">
-      {% if branch and branch.emblem_file %}<img src="/static/img/{{ branch.emblem_file }}" alt="Герб: {{ item.name }}">
-      {% else %}{{ item.mark }}{% endif %}
-    </span>
-    {% if branch and branch.flag_file %}
-    <span class="detail-flag"><img src="/static/img/{{ branch.flag_file }}" alt="Прапор: {{ item.name }}"></span>
-    {% endif %}
-  </div>
+<div class="detail-head">
   <div class="detail-head__main">
     <h1>{{ item.name }}</h1>
     {% if item.hint %}<div class="sub">{{ item.hint }}</div>{% endif %}
   </div>
 </div>
 
-<div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
-
-<div class="grid-cards">
-  {% for b in brigades %}
-    {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
-      <div class="divider"><span>{{ b.troop_type_name or 'Без типу військ' }}</span></div>
-    {% endif %}
-    <a class="card brigade-row" href="/brigades/{{ b.brigade_id }}">
-      <div class="card__head">
-        <span class="emblem {{ 'has-image' if b.emblem_file }}">
-          {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
-        </span>
-        <span class="card__title">
-          <span class="card__name">{{ b.name }}</span>
-        </span>
+<div class="cols-2 cols-2--branch">
+  <div class="panel">
+    <div class="branch-info">
+      <div class="branch-info__row">
+        <dt>Герб</dt>
+        <dd>
+          <span class="branch-info__thumb branch-info__thumb--square {{ 'has-image' if branch and branch.emblem_file }}">
+            {% if branch and branch.emblem_file %}<img src="/static/img/{{ branch.emblem_file }}" alt="Герб: {{ item.name }}">
+            {% else %}{{ item.mark }}{% endif %}
+          </span>
+        </dd>
       </div>
-    </a>
-  {% else %}
-    <div class="empty" style="grid-column:1/-1">Бригад ще не додано.</div>
-  {% endfor %}
+      <div class="branch-info__row">
+        <dt>Дата заснування</dt>
+        <dd><span class="branch-info__value">{{ (branch.founded_date if branch else None) | uk_date }}</span></dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Штаб</dt>
+        <dd><span class="branch-info__value branch-info__value--text">{{ (branch.city_name if branch else None) or '—' }}{% if branch and branch.region_name %}, {{ branch.region_name }}{% endif %}</span></dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Прапор</dt>
+        <dd>
+          {% if branch and branch.flag_file %}
+          <span class="branch-info__thumb branch-info__thumb--flag"><img src="/static/img/{{ branch.flag_file }}" alt="Прапор: {{ item.name }}"></span>
+          {% else %}<span class="branch-info__value">—</span>{% endif %}
+        </dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Нарукавний знак</dt>
+        <dd>
+          {% if branch and branch.patch_file %}
+          <span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.patch_file }}" alt="Нарукавний знак: {{ item.name }}"></span>
+          {% else %}<span class="branch-info__value">—</span>{% endif %}
+        </dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Беретний знак</dt>
+        <dd>
+          {% if branch and branch.beret_badge_file %}
+          <span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.beret_badge_file }}" alt="Беретний знак: {{ item.name }}"></span>
+          {% else %}<span class="branch-info__value">—</span>{% endif %}
+        </dd>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+    <div class="grid-cards">
+      {% for b in brigades %}
+        {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
+          <div class="divider">
+            {% if b.troop_type_collar_file %}
+            <img class="divider__collar" src="/static/img/{{ b.troop_type_collar_file }}" alt="Комірна емблема: {{ b.troop_type_name }}">
+            {% endif %}
+            <span>{{ b.troop_type_name or 'Без типу військ' }}</span>
+          </div>
+        {% endif %}
+        <a class="card brigade-row" href="/brigades/{{ b.brigade_id }}">
+          <div class="card__head">
+            <span class="emblem {{ 'has-image' if b.emblem_file }}">
+              {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
+            </span>
+            <span class="card__title">
+              <span class="card__name">{{ b.name }}</span>
+            </span>
+          </div>
+        </a>
+      {% else %}
+        <div class="empty" style="grid-column:1/-1">Бригад ще не додано.</div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 {% endblock %}

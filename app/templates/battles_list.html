@@ -35,7 +35,7 @@
       <div class="card__head">
         <span class="card__title">
           <span class="card__name">{{ b.name }}</span>
-          <span class="card__sub mono">{{ b.start_date or '' }}{% if b.end_date %} – {{ b.end_date }}{% endif %}</span>
+          <span class="card__sub mono">{{ b.start_date | uk_date }}{% if b.end_date %} – {{ b.end_date | uk_date }}{% endif %}</span>
         </span>
       </div>
       {% if b.city_name %}<div class="tags"><span class="tag">◈ {{ b.city_name }}{% if b.region_name %}, {{ b.region_name }}{% endif %}</span></div>{% endif %}

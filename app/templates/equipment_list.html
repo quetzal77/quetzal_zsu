@@ -19,7 +19,7 @@
       <div class="card__head">
         <span class="card__title">
           <span class="card__name">{{ e.name }}</span>
-          {% if e.adopted_date %}<span class="card__sub mono">на озброєнні з {{ e.adopted_date }}</span>{% endif %}
+          {% if e.adopted_date %}<span class="card__sub mono">на озброєнні з {{ e.adopted_date | uk_date }}</span>{% endif %}
         </span>
       </div>
       {% if e.description %}<div class="equipment-card__desc">{{ e.description|striptags|truncate(120) }}</div>{% endif %}
