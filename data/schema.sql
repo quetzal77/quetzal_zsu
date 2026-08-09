@@ -41,6 +41,8 @@ CREATE TABLE territorial_commands (
 CREATE TABLE army_corps (
     corps_id       INTEGER PRIMARY KEY,
     corps_name     TEXT NOT NULL UNIQUE,
+    founded_date   DATE, -- дата заснування корпусу
+    emblem_file    TEXT, -- посилання/ім'я файлу емблеми корпусу
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

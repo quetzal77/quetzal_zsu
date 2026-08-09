@@ -28,7 +28,7 @@
       </div>
       <div class="branch-info__row">
         <dt>Штаб</dt>
-        <dd><span class="branch-info__value branch-info__value--text">{{ (branch.city_name if branch else None) or '—' }}{% if branch and branch.region_name %}, {{ branch.region_name }}{% endif %}</span></dd>
+        <dd><span class="branch-info__value">{{ (branch.city_name if branch else None) or '—' }}{% if branch and branch.region_name %}, {{ branch.region_name }}{% endif %}</span></dd>
       </div>
       <div class="branch-info__row">
         <dt>Прапор</dt>

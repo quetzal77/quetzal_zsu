@@ -32,13 +32,13 @@
    з 1-2 додатковими полями (напр. Типи з'єднань) лишаються звичайним
    flex-рядком, що переноситься за потреби. #}
 {% macro lookup_panel(lu, locations=[]) %}
-  <div class="panel" style="min-width:0{{ ';grid-column:1 / -1' if lu.wide }}">
+  <div class="panel" id="panel-{{ lu.slug }}" style="min-width:0{{ ';grid-column:1 / -1' if lu.wide }}">
     <div class="panel__head">
       <span>{{ lu.label }}</span>
       <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ lu.rows|length }}</span>
     </div>
     <div class="panel__body">
-      <div style="max-height:{{ '320px' if lu.wide else '230px' }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+      <div style="max-height:{{ lu.list_max_height or ('320px' if lu.wide else '230px') }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for item in lu.rows %}
           {% if lu.wide %}
           <div class="lookup-grid-row">
@@ -52,8 +52,8 @@
               <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
                       class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
               <button type="submit" form="{{ lu.slug }}-delete-{{ item.id }}"
-                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
-                      onclick="return confirm('Видалити {{ lu.singular }} «{{ item.name }}»?')">✕</button>
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити {{ lu.singular }} «{{ item.name }}»?">✕</button>
             </span>
           </div>
           {% else %}
@@ -68,8 +68,8 @@
               <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
                       class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
               <button type="submit" form="{{ lu.slug }}-delete-{{ item.id }}"
-                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
-                      onclick="return confirm('Видалити {{ lu.singular }} «{{ item.name }}»?')">✕</button>
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити {{ lu.singular }} «{{ item.name }}»?">✕</button>
             </span>
           </div>
           {% endif %}
@@ -117,8 +117,12 @@
     {{ lookup_panel(lu, locations) }}
   {% endfor %}
 
-  {# ── Локації (весь перший рядок) ── #}
-  <div class="panel" style="min-width:0;grid-column:1 / -1">
+  {% for lu in lookups if lu.slug == 'army-corps' %}
+    {{ lookup_panel(lu, locations) }}
+  {% endfor %}
+
+  {# ── Локації (половина ширини, як інші плашки) ── #}
+  <div class="panel" id="panel-locations" style="min-width:0">
     <div class="panel__head">
       <span>Локації</span>
       <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ locations|length }}</span>
@@ -127,14 +131,14 @@
       {% if location_error %}
       <div class="empty" style="margin:0 0 12px;color:#B3261E">{{ location_error }}</div>
       {% endif %}
-      <div style="max-height:140px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for l in locations %}
           <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
             <input name="city_name" form="location-edit-{{ l.location_id }}" required
                    value="{{ l.city_name }}"
-                   style="flex:1 1 220px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+                   style="flex:1 1 140px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
             <select name="region_id" form="location-edit-{{ l.location_id }}"
-                    style="flex:1 1 220px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+                    style="flex:1 1 140px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
               {% for r in regions %}
                 <option value="{{ r.region_id }}" {{ 'selected' if r.region_id == l.region_id }}>{{ r.region_name }}</option>
               {% endfor %}
@@ -143,8 +147,8 @@
               <button type="submit" form="location-edit-{{ l.location_id }}"
                       class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
               <button type="submit" form="location-delete-{{ l.location_id }}"
-                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
-                      onclick="return confirm('Видалити локацію «{{ l.city_name }}»?')">✕</button>
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити локацію «{{ l.city_name }}»?">✕</button>
             </span>
           </div>
         {% else %}
@@ -155,9 +159,9 @@
       {% if regions %}
         <form method="post" action="/settings/locations" style="display:flex;gap:8px;flex-wrap:wrap">
           <input name="city_name" required placeholder="Нове місто"
-                 style="flex:1 1 220px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+                 style="flex:1 1 140px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
           <select name="region_id" required
-                  style="flex:1 1 220px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+                  style="flex:1 1 140px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
             {% for r in regions %}
               <option value="{{ r.region_id }}">{{ r.region_name }}</option>
             {% endfor %}
@@ -171,7 +175,7 @@
   </div>
 
   {# ── Регіони ── #}
-  <div class="panel" style="min-width:0">
+  <div class="panel" id="panel-regions" style="min-width:0">
     <div class="panel__head">
       <span>Регіони</span>
       <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ regions|length }}</span>
@@ -187,8 +191,8 @@
               <button type="submit" form="region-edit-{{ r.region_id }}"
                       class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
               <button type="submit" form="region-delete-{{ r.region_id }}"
-                      class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--muted)"
-                      onclick="return confirm('Видалити регіон «{{ r.region_name }}»?')">✕</button>
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити регіон «{{ r.region_name }}»?">✕</button>
             </span>
           </div>
         {% else %}
@@ -204,7 +208,7 @@
     </div>
   </div>
 
-  {% for lu in lookups if lu.slug != 'military-branches' %}
+  {% for lu in lookups if lu.slug not in ['military-branches', 'army-corps'] %}
     {{ lookup_panel(lu, locations) }}
   {% endfor %}
 
@@ -225,4 +229,96 @@
   <form id="location-delete-{{ l.location_id }}" method="post"
         action="/settings/locations/{{ l.location_id }}/delete" style="display:none"></form>
 {% endfor %}
+
+{# ── Модальні вікна: кастомне підтвердження видалення (замість window.confirm,
+     що показує "адреса:порт says") і попередження про пов'язані сутності
+     (замість window.alert) ── #}
+<div class="modal-backdrop" id="confirm-modal" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true">
+    <p class="modal__message" id="confirm-modal-message"></p>
+    <div class="modal__actions">
+      <button type="button" class="btn-ghost" id="confirm-modal-cancel">Скасувати</button>
+      <button type="button" class="btn-danger" id="confirm-modal-ok">Видалити</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="warning-modal" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true">
+    <p class="modal__message" id="warning-modal-message"></p>
+    <div class="modal__actions">
+      <button type="button" class="btn-outline" id="warning-modal-ok">Зрозуміло</button>
+    </div>
+  </div>
+</div>
+
+{# Дані з бекенду для скрипта нижче: список сутностей, що блокують видалення
+   (текст, а не JS-рядок, — щоб лапки/апострофи в назвах не ламали синтаксис),
+   і id панелі, до якої треба проскролити після дії. #}
+{% if delete_blocked_message %}
+<div id="delete-blocked-message" hidden>{{ delete_blocked_message }}</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var confirmBackdrop = document.getElementById('confirm-modal');
+  var confirmMessage = document.getElementById('confirm-modal-message');
+  var confirmOk = document.getElementById('confirm-modal-ok');
+  var confirmCancel = document.getElementById('confirm-modal-cancel');
+  var pendingForm = null;
+
+  function openConfirm(form, message) {
+    pendingForm = form;
+    confirmMessage.textContent = message;
+    confirmBackdrop.hidden = false;
+  }
+  function closeConfirm() {
+    confirmBackdrop.hidden = true;
+    pendingForm = null;
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.js-confirm-delete');
+    if (!btn) return;
+    e.preventDefault();
+    var form = document.getElementById(btn.getAttribute('form'));
+    if (form) openConfirm(form, btn.getAttribute('data-confirm'));
+  });
+  confirmOk.addEventListener('click', function () {
+    var form = pendingForm;
+    closeConfirm();
+    if (form) form.submit();
+  });
+  confirmCancel.addEventListener('click', closeConfirm);
+  confirmBackdrop.addEventListener('click', function (e) {
+    if (e.target === confirmBackdrop) closeConfirm();
+  });
+
+  var warningBackdrop = document.getElementById('warning-modal');
+  var warningMessage = document.getElementById('warning-modal-message');
+  var warningOk = document.getElementById('warning-modal-ok');
+  function closeWarning() { warningBackdrop.hidden = true; }
+  warningOk.addEventListener('click', closeWarning);
+  warningBackdrop.addEventListener('click', function (e) {
+    if (e.target === warningBackdrop) closeWarning();
+  });
+
+  // Після редагування/додавання/видалення сторінка перерендерюється заново,
+  // тож без цього браузер завжди підкидає скрол до самого верху — повертаємо
+  // користувача до тієї ж плашки, з якою він щойно працював.
+  var scrollTarget = "{{ scroll_to or '' }}";
+  if (scrollTarget) {
+    var panel = document.getElementById(scrollTarget);
+    if (panel) panel.scrollIntoView({ block: 'start' });
+  }
+
+  var blockedEl = document.getElementById('delete-blocked-message');
+  if (blockedEl) {
+    warningMessage.textContent = blockedEl.textContent;
+    warningBackdrop.hidden = false;
+  }
+})();
+</script>
 {% endblock %}

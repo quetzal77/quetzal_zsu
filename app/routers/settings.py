@@ -26,14 +26,29 @@ _LOOKUP_TABLES = {
             {"col": "beret_badge_file", "label": "Беретний знак"},
         ],
         "wide": True,  # забагато полів в рядку для вузької колонки
+        "dependents": [
+            {"table": "brigades", "fk_col": "military_branch_id", "name_col": "name", "label": "бригад"},
+        ],
     },
     "army-corps": {
         "table": "army_corps", "id_col": "corps_id", "name_col": "corps_name",
         "label": "Армійські корпуси", "singular": "армійський корпус",
+        "extra_cols": [
+            {"col": "founded_date", "label": "Дата заснування", "type": "date"},
+            {"col": "emblem_file", "label": "Емблема"},
+        ],
+        "wide": True,  # рівно 4 елементи (назва + 2 поля + дії) — влазить в один рядок гріда
+        "list_max_height": "150px",  # видно не більше ~3 рядків корпусів, решта — скролом
+        "dependents": [
+            {"table": "brigades", "fk_col": "corps_id", "name_col": "name", "label": "бригад"},
+        ],
     },
     "territorial-commands": {
         "table": "territorial_commands", "id_col": "command_id", "name_col": "command_name",
         "label": "Оперативні командування", "singular": "оперативне командування",
+        "dependents": [
+            {"table": "brigades", "fk_col": "territorial_command_id", "name_col": "name", "label": "бригад"},
+        ],
     },
     "troop-types": {
         "table": "troop_types", "id_col": "type_id", "name_col": "type_name",
@@ -41,16 +56,55 @@ _LOOKUP_TABLES = {
         "extra_cols": [
             {"col": "collar_emblem_file", "label": "Комірна емблема"},
         ],
+        "dependents": [
+            {"table": "brigades", "fk_col": "troop_type_id", "name_col": "name", "label": "бригад"},
+        ],
     },
     "unit-types": {
         "table": "unit_types", "id_col": "unit_type_id", "name_col": "type_name",
         "label": "Типи з'єднань", "singular": "тип з'єднання",
+        "dependents": [
+            {"table": "brigades", "fk_col": "unit_type_id", "name_col": "name", "label": "бригад"},
+        ],
     },
     "equipment-types": {
         "table": "equipment_types", "id_col": "equipment_type_id", "name_col": "type_name",
         "label": "Типи спорядження", "singular": "тип спорядження",
+        "dependents": [
+            {"table": "equipment", "fk_col": "equipment_type_id", "name_col": "name", "label": "техніки"},
+        ],
     },
 }
+
+# Довідники поза _LOOKUP_TABLES (регіони, локації) мають свій власний набір
+# FK-залежностей — використовується тим самим _find_dependents нижче.
+_REGION_DEPENDENTS = [
+    {"table": "locations", "fk_col": "region_id", "name_col": "city_name", "label": "локацій"},
+]
+_LOCATION_DEPENDENTS = [
+    {"table": "military_branches", "fk_col": "hq_location_id", "name_col": "branch_name", "label": "штабів родів військ"},
+    {"table": "brigades", "fk_col": "location_id", "name_col": "name", "label": "бригад"},
+    {"table": "battles", "fk_col": "location_id", "name_col": "name", "label": "боїв"},
+]
+
+
+def _find_dependents(db: sqlite3.Connection, dependents: list, item_id: int) -> list[str]:
+    """Для кожного залежного FK шукає рядки, що посилаються на item_id, і формує
+    список рядків виду "бригад: «81-ша...», «93-тя...»" для повідомлення про помилку."""
+    blockers = []
+    for dep in dependents:
+        rows = db.execute(
+            f"SELECT {dep['name_col']} AS name FROM {dep['table']} WHERE {dep['fk_col']} = ?",
+            (item_id,),
+        ).fetchall()
+        if rows:
+            names = ", ".join(f"«{r['name']}»" for r in rows)
+            blockers.append(f"{dep['label']}: {names}")
+    return blockers
+
+
+def _delete_blocked_message(item_label: str, blockers: list) -> str:
+    return f"Не можна видалити {item_label} — на нього посилаються {'; '.join(blockers)}."
 
 
 def _optional_int(value: Optional[str]) -> Optional[int]:
@@ -133,7 +187,7 @@ def create_region(
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url="/settings#panel-regions", status_code=303)
 
 
 @router.post("/regions/{region_id}/edit")
@@ -151,21 +205,31 @@ def update_region(
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url="/settings#panel-regions", status_code=303)
 
 
 @router.post("/regions/{region_id}/delete")
 def delete_region(
+    request: Request,
     region_id: int,
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    blockers = _find_dependents(db, _REGION_DEPENDENTS, region_id)
+    if blockers:
+        region = db.execute(
+            "SELECT region_name FROM regions WHERE region_id = ?", (region_id,)
+        ).fetchone()
+        context = _settings_context(db)
+        context["delete_blocked_message"] = _delete_blocked_message(f"регіон «{region['region_name']}»", blockers)
+        context["scroll_to"] = "panel-regions"
+        return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute("DELETE FROM regions WHERE region_id = ?", (region_id,))
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url="/settings#panel-regions", status_code=303)
 
 
 @router.post("/locations")
@@ -183,6 +247,7 @@ def create_location(
     if duplicate:
         context = _settings_context(db)
         context["location_error"] = f"Місто «{city_name}» вже є в цьому регіоні"
+        context["scroll_to"] = "panel-locations"
         return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute(
@@ -192,7 +257,7 @@ def create_location(
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url="/settings#panel-locations", status_code=303)
 
 
 @router.post("/locations/{location_id}/edit")
@@ -211,6 +276,7 @@ def update_location(
     if duplicate:
         context = _settings_context(db)
         context["location_error"] = f"Місто «{city_name}» вже є в цьому регіоні"
+        context["scroll_to"] = "panel-locations"
         return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute(
@@ -221,21 +287,31 @@ def update_location(
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url="/settings#panel-locations", status_code=303)
 
 
 @router.post("/locations/{location_id}/delete")
 def delete_location(
+    request: Request,
     location_id: int,
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    blockers = _find_dependents(db, _LOCATION_DEPENDENTS, location_id)
+    if blockers:
+        location = db.execute(
+            "SELECT city_name FROM locations WHERE location_id = ?", (location_id,)
+        ).fetchone()
+        context = _settings_context(db)
+        context["delete_blocked_message"] = _delete_blocked_message(f"локацію «{location['city_name']}»", blockers)
+        context["scroll_to"] = "panel-locations"
+        return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute("DELETE FROM locations WHERE location_id = ?", (location_id,))
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url="/settings#panel-locations", status_code=303)
 
 
 def _extra_col_values(config: dict, form_values: dict) -> list:
@@ -281,7 +357,7 @@ def create_lookup_item(
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url=f"/settings#panel-{slug}", status_code=303)
 
 
 @router.post("/lookups/{slug}/{item_id}/edit")
@@ -318,20 +394,32 @@ def update_lookup_item(
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url=f"/settings#panel-{slug}", status_code=303)
 
 
 @router.post("/lookups/{slug}/{item_id}/delete")
 def delete_lookup_item(
+    request: Request,
     slug: str,
     item_id: int,
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
     config = _lookup_config(slug)
+    blockers = _find_dependents(db, config.get("dependents", []), item_id)
+    if blockers:
+        item = db.execute(
+            f"SELECT {config['name_col']} AS name FROM {config['table']} WHERE {config['id_col']} = ?",
+            (item_id,),
+        ).fetchone()
+        context = _settings_context(db)
+        item_label = f"{config['singular']} «{item['name']}»" if item else config["singular"]
+        context["delete_blocked_message"] = _delete_blocked_message(item_label, blockers)
+        context["scroll_to"] = f"panel-{slug}"
+        return templates.TemplateResponse(request, "settings.html", context, status_code=400)
     try:
         db.execute(f"DELETE FROM {config['table']} WHERE {config['id_col']} = ?", (item_id,))
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/settings", status_code=303)
+    return RedirectResponse(url=f"/settings#panel-{slug}", status_code=303)

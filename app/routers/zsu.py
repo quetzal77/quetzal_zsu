@@ -11,7 +11,7 @@ router = APIRouter(tags=["zsu"])
 # data-slug лишається заготовкою під майбутній роутинг (напр. /zsu/{slug}).
 # Функціональність готова лише для "Сили безпілотних систем" і "Сили спеціальних
 # операцій" — решта плашок заморожені (disabled) до появи відповідних сторінок.
-ACTIVE_SLUGS = {"unmanned-systems-forces", "special-operations-forces"}
+ACTIVE_SLUGS = {"unmanned-systems-forces", "special-operations-forces", "air-assault-troops"}
 STRUCTURE = [
     {
         "title": "Загальна структура",
@@ -46,7 +46,8 @@ STRUCTURE = [
     {
         "title": "Окремі роди військ ЗСУ",
         "items": [
-            {"slug": "air-assault-troops", "mark": "ДШВ", "name": "Десантно-штурмові війська"},
+            {"slug": "air-assault-troops", "mark": "ДШВ", "name": "Десантно-штурмові війська",
+             "icon": "forces/dshv_patch.png"},
             {"slug": "signal-cyber-troops", "mark": "ВЗК", "name": "Війська зв’язку та кібербезпеки"},
         ],
     },
@@ -59,12 +60,20 @@ STRUCTURE = [
         ],
     },
     {
-        "title": "Правоохоронні органи та формування з правоохоронними функціями",
+        "title": "Міністерство внутрішніх справ",
         "items": [
+            {"slug": "npu", "mark": "НПУ", "name": "Національна поліція України"},
             {"slug": "ngu", "mark": "НГУ", "name": "Національна гвардія України"},
             {"slug": "dpsu", "mark": "ДПСУ", "name": "Державна прикордонна служба України"},
-            {"slug": "npu", "mark": "НПУ", "name": "Національна поліція України"},
+        ],
+    },
+    {
+        "title": "Правоохоронні органи та формування з правоохоронними та військовими функціями",
+        "items": [
             {"slug": "dsns", "mark": "ДСНС", "name": "Державна служба України з надзвичайних ситуацій"},
+            {"slug": "vspr", "mark": "ВСП", "name": "Військова служба правопорядку"},
+            {"slug": "dsst", "mark": "ДССТ", "name": "Державна спеціальна служба транспорту"},
+            {"slug": "chaplaincy", "mark": "СВК", "name": "Служба військового капеланства"},
         ],
     },
 ]
@@ -127,7 +136,9 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
            LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
            WHERE b.military_branch_id = ?
            ORDER BY
-               CASE WHEN tt.type_name IS NULL THEN 1 ELSE 0 END,
+               CASE WHEN tt.type_name IS NULL THEN 2
+                    WHEN tt.type_name = 'Командування' THEN 0
+                    ELSE 1 END,
                tt.type_name COLLATE UKRAINIAN,
                CAST(b.name AS INTEGER), b.name""",
         (branch["branch_id"] if branch else -1,),
