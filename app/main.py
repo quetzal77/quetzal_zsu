@@ -11,7 +11,7 @@ from app.routers import auth, battles, brigades, equipment, settings, stats, tra
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-app = FastAPI(title="Портал бригад ЗСУ")
+app = FastAPI(title="Портал з'єднань ЗСУ")
 
 SESSION_SECRET = os.environ.get("SESSION_SECRET")
 if not SESSION_SECRET:

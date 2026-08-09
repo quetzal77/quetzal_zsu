@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Статистика — Портал бригад ЗСУ{% endblock %}
+{% block title %}Статистика — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <div class="page-eyebrow">Статистика реєстру</div>
 
 <div class="kpi-band">
-  <a class="kpi" href="/brigades"><b>{{ counts.brigades }}</b><span>Бригад у реєстрі</span></a>
+  <a class="kpi" href="/brigades"><b>{{ counts.brigades }}</b><span>З'єднань у реєстрі</span></a>
   <a class="kpi" href="/battles"><b>{{ counts.battles }}</b><span>Битв задокументовано</span></a>
   <a class="kpi" href="/equipment"><b>{{ counts.equipment }}</b><span>Позицій спорядження</span></a>
   <a class="kpi" href="/traditions"><b>{{ counts.traditions }}</b><span>Традицій</span></a>

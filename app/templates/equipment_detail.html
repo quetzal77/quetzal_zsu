@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ equipment.name }} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{{ equipment.name }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <a class="back-link" href="/equipment">← До спорядження</a>
 
@@ -36,7 +36,7 @@
 
     <div class="panel">
       <div class="panel__head">
-        <span>Бригади, що використовують</span>
+        <span>З'єднання, що використовують</span>
         <span class="mono" style="color:var(--green)">{{ brigades|length }}</span>
       </div>
       {% for b in brigades %}
@@ -51,7 +51,7 @@
           {% if b.branch_name %}<span class="tag tag--branch">{{ b.branch_name }}</span>{% endif %}
         </a>
       {% else %}
-        <div class="empty">Жодна бригада ще не використовує цей зразок.</div>
+        <div class="empty">Жодне з'єднання ще не використовує цей зразок.</div>
       {% endfor %}
     </div>
   </div>

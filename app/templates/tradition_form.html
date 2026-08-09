@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if tradition %}Редагування традиції{% else %}Нова традиція{% endif %} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{% if tradition %}Редагування традиції{% else %}Нова традиція{% endif %} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <a class="back-link" href="/traditions">← Скасувати</a>
 <div class="page-eyebrow" style="margin-bottom:8px">{% if tradition %}Редагування{% else %}Новий запис{% endif %}</div>
@@ -31,14 +31,14 @@
     </div>
   </div>
 
-  {# ── Секція бригад (тільки при редагуванні) ── #}
+  {# ── Секція з'єднань (тільки при редагуванні) ── #}
   {% if tradition %}
 
     {# поля додавання + кнопка «Додати» — прив'язані до окремої форми add-brigade-form #}
     {% if all_brigades %}
       <div class="form-grid" style="margin-top:24px;gap:14px 20px">
         <div class="field">
-          <label for="brigade_id">Обрати бригаду</label>
+          <label for="brigade_id">Обрати з'єднання</label>
           <select id="brigade_id" name="brigade_id" form="add-brigade-form" required>
             <option value="">— обрати —</option>
             {% for b in all_brigades %}
@@ -52,7 +52,7 @@
                  placeholder="РРРР-ММ-ДД" form="add-brigade-form">
         </div>
         <div class="field field--wide">
-          <label for="new_photo">Фото бригадної традиції (URL)</label>
+          <label for="new_photo">Фото традиції з'єднання (URL)</label>
           <input id="new_photo" name="photo" form="add-brigade-form"
                  placeholder="Додай шлях до фото">
         </div>
@@ -60,7 +60,7 @@
         {% if tradition and tradition.is_honorific %}
         <div class="form-grid" style="margin-top:12px;gap:14px 20px">
             <div class="field field--wide">
-                <label for="unit_name">Почесне ім’я бригади</label>
+                <label for="unit_name">Почесне ім’я з'єднання</label>
                 <input id="unit_name" name="unit_name"
                        form="add-brigade-form"
                        placeholder="напр. Таврійська">
@@ -72,7 +72,7 @@
       </div>
     {% endif %}
 
-    {# список вже доданих бригад #}
+    {# список вже доданих з'єднань #}
     {% if brigades %}
       <div style="margin-top:24px;margin-bottom:8px;color:var(--faint);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700">
         Вже призначено
@@ -88,14 +88,14 @@
             </span>
             <span style="display:flex;align-items:center;gap:8px">
               <input name="photo" form="edit-photo-{{ b.brigade_id }}" value="{{ b.photo or '' }}"
-                     class="mono" placeholder="Фото бригадної традиції (URL)"
+                     class="mono" placeholder="Фото традиції з'єднання (URL)"
                      style="width:200px;font-size:12px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
               <button type="submit" form="edit-photo-{{ b.brigade_id }}"
                       class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти фото</button>
               <button type="submit" form="remove-{{ b.brigade_id }}"
                       class="btn-ghost"
                       style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
-                      onclick="return confirm('Видалити цю бригаду?')">✕</button>
+                      onclick="return confirm('Видалити це з'єднання?')">✕</button>
             </span>
           </div>
         {% endfor %}
@@ -103,7 +103,7 @@
     {% elif not all_brigades %}
       {# all_brigades empty AND brigades empty — all assigned #}
     {% else %}
-      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодна бригада ще не призначена.</div>
+      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодне з'єднання ще не призначена.</div>
     {% endif %}
 
   {% endif %}
@@ -117,13 +117,13 @@
   </div>
 </form>
 
-{# ── Прихована форма для додавання бригади ── #}
+{# ── Прихована форма для додавання з'єднання ── #}
 {% if tradition %}
   <form id="add-brigade-form" method="post"
         action="/traditions/{{ tradition.tradition_id }}/brigades"
         style="display:none"></form>
 
-  {# ── Форми для редагування фото та видалення бригад ── #}
+  {# ── Форми для редагування фото та видалення з'єднань ── #}
   {% for b in brigades %}
     <form id="edit-photo-{{ b.brigade_id }}" method="post"
           action="/traditions/{{ tradition.tradition_id }}/brigades/{{ b.brigade_id }}/edit"

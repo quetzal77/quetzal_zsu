@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}{% if brigade %}Редагування бригади{% else %}Нова бригада{% endif %} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{% if brigade %}Редагування з'єднання{% else %}Нове з'єднання{% endif %} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <a class="back-link" href="{% if brigade %}/brigades/{{ brigade.brigade_id }}{% else %}/brigades{% endif %}">← Скасувати</a>
 <div class="page-eyebrow" style="margin-bottom:8px">{% if brigade %}Редагування картки{% else %}Нове з’єднання{% endif %}</div>
 <h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">
-  {% if brigade %}Редагування: {{ brigade.name }}{% else %}Нова бригада{% endif %}
+  {% if brigade %}Редагування: {{ brigade.name }}{% else %}Нове з'єднання{% endif %}
 </h1>
 
 <form class="brigade-form" method="post"
       action="{% if brigade %}/brigades/{{ brigade.brigade_id }}/edit{% else %}/brigades/new{% endif %}">
   <div class="form-grid">
     <div class="field field--wide">
-      <label for="name">Назва бригади *</label>
+      <label for="name">Назва з'єднання *</label>
       <input id="name" name="name" required value="{{ brigade.name if brigade else '' }}" placeholder="напр. 93-тя окрема механізована бригада">
     </div>
     <div class="field field--wide">
@@ -92,7 +92,7 @@
   </div>
 
     {% if brigade %}
-    <h2 style="margin-top:32px;margin-bottom:12px">Фотографії бригади</h2>
+    <h2 style="margin-top:32px;margin-bottom:12px">Фотографії підрозділу</h2>
     <div class="form-grid">
 
         <div class="field field--wide">
@@ -121,7 +121,7 @@
 
 
     <div class="form-actions">
-    <button type="submit" class="btn-primary">{% if brigade %}Зберегти зміни{% else %}Створити бригаду{% endif %}</button>
+    <button type="submit" class="btn-primary">{% if brigade %}Зберегти зміни{% else %}Створити з'єднання{% endif %}</button>
     <a class="btn-ghost" href="{% if brigade %}/brigades/{{ brigade.brigade_id }}{% else %}/brigades{% endif %}">Скасувати</a>
   </div>
 </form>

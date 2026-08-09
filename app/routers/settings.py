@@ -37,7 +37,7 @@ _LOOKUP_TABLES = {
     },
     "troop-types": {
         "table": "troop_types", "id_col": "type_id", "name_col": "type_name",
-        "label": "Типи бригад", "singular": "тип бригади",
+        "label": "Типи родів військ", "singular": "тип роду військ",
         "extra_cols": [
             {"col": "collar_emblem_file", "label": "Комірна емблема"},
         ],

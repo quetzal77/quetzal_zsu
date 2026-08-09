@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if equipment %}Редагування спорядження{% else %}Нове спорядження{% endif %} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{% if equipment %}Редагування спорядження{% else %}Нове спорядження{% endif %} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <a class="back-link" href="{% if equipment %}/equipment/{{ equipment.equipment_id }}{% else %}/equipment{% endif %}">← Скасувати</a>
 <div class="page-eyebrow" style="margin-bottom:8px">{% if equipment %}Редагування{% else %}Новий запис{% endif %}</div>
@@ -40,13 +40,13 @@
     </div>
   </div>
 
-  {# ── Секція бригад-користувачів (тільки при редагуванні) ── #}
+  {# ── Секція з'єднань-користувачів (тільки при редагуванні) ── #}
   {% if equipment %}
 
     {% if all_brigades %}
       <div class="form-grid" style="margin-top:24px;gap:14px 20px">
         <div class="field">
-          <label for="brigade_id">Обрати бригаду</label>
+          <label for="brigade_id">Обрати з'єднання</label>
           <select id="brigade_id" name="brigade_id" form="add-brigade-form" required>
             <option value="">— обрати —</option>
             {% for b in all_brigades %}
@@ -62,7 +62,7 @@
 
     {% if brigades %}
       <div style="margin-top:24px;margin-bottom:8px;color:var(--faint);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700">
-        Бригади, що використовують
+          З'єднання, що використовують
       </div>
       <div class="panel" style="margin-bottom:8px">
         {% for b in brigades %}
@@ -73,14 +73,14 @@
             <button type="submit" form="remove-{{ b.brigade_id }}"
                     class="btn-ghost"
                     style="flex:none;padding:4px 12px;font-size:12px;color:var(--muted)"
-                    onclick="return confirm('Прибрати цю бригаду зі списку користувачів?')">✕</button>
+                    onclick="return confirm('Прибрати це з'єднання зі списку користувачів?')">✕</button>
           </div>
         {% endfor %}
       </div>
     {% elif not all_brigades %}
       {# all_brigades empty AND brigades empty — all assigned #}
     {% else %}
-      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодна бригада ще не додана.</div>
+      <div class="empty" style="margin-top:16px;margin-bottom:8px">Жодне з'єднання ще не додана.</div>
     {% endif %}
 
   {% endif %}
@@ -93,7 +93,7 @@
   </div>
 </form>
 
-{# ── Прихована форма для додавання бригади + форми видалення ── #}
+{# ── Прихована форма для додавання з'єднання + форми видалення ── #}
 {% if equipment %}
   <form id="add-brigade-form" method="post"
         action="/equipment/{{ equipment.equipment_id }}/brigades"

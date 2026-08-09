@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
+{% block title %}з'єднання — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 {% set view = view or 'cards' %}
 {% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.unit_type_id or filters.region_id %}
@@ -20,7 +20,7 @@
       <button type="submit" name="view" value="table" class="{{ 'is-active' if view == 'table' }}">☰ Таблиця</button>
     </div>
     {% if request.session.get('username') %}
-    <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
+    <a class="btn-primary" href="/brigades/new">＋ Додати з'єднання</a>
     {% endif %}
 
 
@@ -249,7 +249,7 @@
       if (match) visibleCount += 1;
     });
 
-    // Ховаємо заголовки груп (рід військ), під якими не лишилось жодної видимої бригади.
+    // Ховаємо заголовки груп (рід військ), під якими не лишилось жодного видимого з'єднання.
     [dividers, groupRows].forEach(function (headers) {
       headers.forEach(function (header) {
         var sibling = header.nextElementSibling;

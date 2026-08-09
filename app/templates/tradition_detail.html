@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ tradition.title }} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{{ tradition.title }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <a class="back-link" href="/traditions">← До традицій</a>
 
@@ -27,7 +27,7 @@
 
 <div class="panel">
   <div class="panel__head">
-    <span>Бригади з цією традицією</span>
+    <span>З'єднання з цією традицією</span>
     <span class="mono" style="color:var(--green)">{{ brigades|length }}</span>
   </div>
   {% if brigades %}
@@ -35,7 +35,7 @@
       <table class="brigades-table">
         <thead>
           <tr>
-            <th>Назва бригади</th>
+            <th>Назва з'єднання</th>
             {% if tradition.is_honorific %}
                 <th>Почесне ім'я</th>
             {% endif %}
@@ -58,7 +58,7 @@
       </table>
     </div>
   {% else %}
-    <div class="empty">Жодна бригада ще не має цієї традиції.</div>
+    <div class="empty">Жодне з'єднання ще не має цієї традиції.</div>
   {% endif %}
 </div>
 {% endblock %}

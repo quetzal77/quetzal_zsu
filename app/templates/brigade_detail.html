@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ brigade.name }} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{{ brigade.name }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
-<a class="back-link" href="/brigades">← До реєстру бригад</a>
+<a class="back-link" href="/brigades">← До реєстру підрозділів</a>
 
 <div class="detail-head">
   <div class="detail-emblem {{ 'has-image' if brigade.emblem_file }}">
@@ -20,7 +20,7 @@
   <div style="display:flex;gap:10px">
     <a class="btn-outline" href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
     <button type="submit" form="delete-brigade-form" class="btn-danger"
-            onclick="return confirm('Видалити цю бригаду? Цю дію не можна скасувати.')">Видалити</button>
+            onclick="return confirm('Видалити це з'єднання? Цю дію не можна скасувати.')">Видалити</button>
   </div>
   <form id="delete-brigade-form" method="post" action="/brigades/{{ brigade.brigade_id }}/delete" style="display:none"></form>
   {% endif %}

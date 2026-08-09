@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ item.name }} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{{ item.name }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <a class="back-link" href="/zsu">← Структура Збройних Сил України</a>
 
@@ -84,7 +84,7 @@
           </div>
         </a>
       {% else %}
-        <div class="empty" style="grid-column:1/-1">Бригад ще не додано.</div>
+        <div class="empty" style="grid-column:1/-1">З'єднання ще не додано.</div>
       {% endfor %}
     </div>
   </div>
