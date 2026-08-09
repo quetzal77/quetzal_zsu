@@ -9,9 +9,9 @@ router = APIRouter(tags=["zsu"])
 
 # Статична структура ЗСУ для сторінки-довідника. Плашки поки не клікабельні —
 # data-slug лишається заготовкою під майбутній роутинг (напр. /zsu/{slug}).
-# Функціональність готова лише для "Сили безпілотних систем" — решта плашок
-# заморожені (disabled) до появи відповідних сторінок.
-ACTIVE_SLUGS = {"unmanned-systems-forces"}
+# Функціональність готова лише для "Сили безпілотних систем" і "Сили спеціальних
+# операцій" — решта плашок заморожені (disabled) до появи відповідних сторінок.
+ACTIVE_SLUGS = {"unmanned-systems-forces", "special-operations-forces"}
 STRUCTURE = [
     {
         "title": "Загальна структура",
@@ -33,7 +33,8 @@ STRUCTURE = [
     {
         "title": "Окремі роди сил ЗСУ",
         "items": [
-            {"slug": "special-operations-forces", "mark": "ССО", "name": "Сили спеціальних операцій"},
+            {"slug": "special-operations-forces", "mark": "ССО", "name": "Сили спеціальних операцій",
+             "icon": "forces/sso_patch.png"},
             {"slug": "territorial-defense-forces", "mark": "СТрО", "name": "Сили територіальної оборони"},
             {"slug": "logistics-forces", "mark": "СЛ", "name": "Сили логістики"},
             {"slug": "support-forces", "mark": "СП", "name": "Сили підтримки"},
@@ -47,6 +48,23 @@ STRUCTURE = [
         "items": [
             {"slug": "air-assault-troops", "mark": "ДШВ", "name": "Десантно-штурмові війська"},
             {"slug": "signal-cyber-troops", "mark": "ВЗК", "name": "Війська зв’язку та кібербезпеки"},
+        ],
+    },
+    {
+        "title": "Спецслужби та органи безпеки",
+        "items": [
+            {"slug": "sbu", "mark": "СБУ", "name": "Служба безпеки України"},
+            {"slug": "gur", "mark": "ГУР", "name": "Головне управління розвідки"},
+            {"slug": "szru", "mark": "СЗР", "name": "Зовнішня розвідка України"},
+        ],
+    },
+    {
+        "title": "Правоохоронні органи та формування з правоохоронними функціями",
+        "items": [
+            {"slug": "ngu", "mark": "НГУ", "name": "Національна гвардія України"},
+            {"slug": "dpsu", "mark": "ДПСУ", "name": "Державна прикордонна служба України"},
+            {"slug": "npu", "mark": "НПУ", "name": "Національна поліція України"},
+            {"slug": "dsns", "mark": "ДСНС", "name": "Державна служба України з надзвичайних ситуацій"},
         ],
     },
 ]
@@ -77,7 +95,7 @@ def _find_item(slug: str) -> dict:
 
 @router.get("/zsu/{slug}")
 def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get_db)):
-    # Активна лише "unmanned-systems-forces" — решта плашок на /zsu заморожені
+    # Активні лише слаги з ACTIVE_SLUGS — решта плашок на /zsu заморожені
     # (disabled) і не лінкуються сюди, але прямий запит все одно має 404-ити.
     if slug not in ACTIVE_SLUGS:
         raise HTTPException(status_code=404)
@@ -95,8 +113,16 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     ).fetchone()
 
     brigades = db.execute(
-        """SELECT b.brigade_id, b.name, b.emblem_file, tt.type_name AS troop_type_name,
-                  tt.collar_emblem_file AS troop_type_collar_file
+        """SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
+                  tt.type_name AS troop_type_name,
+                  tt.collar_emblem_file AS troop_type_collar_file,
+                  (
+                      SELECT bt.unit_name
+                      FROM brigade_traditions bt
+                      JOIN traditions t ON t.tradition_id = bt.tradition_id
+                      WHERE bt.brigade_id = b.brigade_id
+                        AND t.is_honorific = 1
+                  ) AS honorific_name
            FROM brigades b
            LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
            WHERE b.military_branch_id = ?

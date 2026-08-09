@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 
 from app.auth import require_login
 from app.database import get_db
+from app.routers.zsu import ACTIVE_SLUGS, STRUCTURE
 from app.sanitize import sanitize_html
 from app.templates import templates
 
@@ -19,6 +20,16 @@ _FILTER_KEYS = (
     "unit_type_id",
     "region_id",
 )
+
+
+# branch_name -> slug для активних плашок /zsu — щоб "Рід військ" на сторінці
+# бригади лінкувався лише туди, де вже є робоча сторінка роду військ.
+_ACTIVE_ZSU_SLUG_BY_BRANCH_NAME = {
+    item["name"]: item["slug"]
+    for group in STRUCTURE
+    for item in group["items"]
+    if item["slug"] in ACTIVE_SLUGS
+}
 
 
 def _optional_int(value: Optional[str]) -> Optional[int]:
@@ -301,10 +312,19 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
         (brigade_id,)
     ).fetchall()
 
+    branch_zsu_slug = _ACTIVE_ZSU_SLUG_BY_BRANCH_NAME.get(brigade["branch_name"]) if brigade else None
+
     return templates.TemplateResponse(
         request,
         "brigade_detail.html",
-        {"brigade": brigade, "battles": battles, "equipment": equipment, "photos": photos, "traditions": traditions},
+        {
+            "brigade": brigade,
+            "battles": battles,
+            "equipment": equipment,
+            "photos": photos,
+            "traditions": traditions,
+            "branch_zsu_slug": branch_zsu_slug,
+        },
     )
 
 

@@ -130,6 +130,11 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .card__name { color: var(--ink); font-weight: 700; font-size: 15.5px; line-height: 1.2; }
 .card__sub { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
 .card__honorific { align-self: flex-start; display: inline-block; margin-top: 7px; padding: 4px 8px; color: #934400; background: #FFF0DF; border: 1px solid #F2B46F; border-radius: 2px; font-size: 12px; font-weight: 700; line-height: 1.25; }
+.grid-cards--compact { grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 10px; }
+.card--compact { padding: 10px 12px; gap: 0; }
+.card--compact .card__head { gap: 10px; align-items: center; }
+.card--compact .card__name { font-size: 13.5px; }
+.card--compact .card__honorific { margin-top: 4px; padding: 2px 6px; font-size: 10.5px; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { font-size: 10.5px; letter-spacing: 0.04em; color: var(--muted); background: var(--line-3); border: 1px solid var(--line); padding: 3px 8px; border-radius: 2px; white-space: nowrap; }
 .tag--branch { text-transform: uppercase; font-weight: 600; color: var(--accent-text); background: var(--tint-bg); border-color: var(--tint-border); }
@@ -230,6 +235,9 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .spec .row dt { color: var(--faint); font-size: 13px; margin: 0; }
 .spec .row dd { color: var(--text); font-size: 13.5px; text-align: right; margin: 0; }
 .spec .row dd.mono { font-family: var(--mono); }
+.spec .row dd a.spec-link { color: var(--accent-text); font-weight: 600; text-decoration: underline; text-decoration-color: var(--tint-border); text-underline-offset: 2px; }
+.spec .row dd a.spec-link:hover { text-decoration-color: var(--accent-text); }
+.spec .row dd a.spec-link::after { content: " →"; }
 .list-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line-3); color: inherit; }
 .list-row:last-child { border-bottom: none; }
 .list-row:hover { background: #F6F8FB; }

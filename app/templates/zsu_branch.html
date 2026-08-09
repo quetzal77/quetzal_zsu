@@ -59,7 +59,7 @@
 
   <div>
     <div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
-    <div class="grid-cards">
+    <div class="grid-cards grid-cards--compact">
       {% for b in brigades %}
         {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
           <div class="divider">
@@ -69,13 +69,17 @@
             <span>{{ b.troop_type_name or 'Без типу військ' }}</span>
           </div>
         {% endif %}
-        <a class="card brigade-row" href="/brigades/{{ b.brigade_id }}">
+        <a class="card card--compact brigade-row" href="/brigades/{{ b.brigade_id }}">
           <div class="card__head">
-            <span class="emblem {{ 'has-image' if b.emblem_file }}">
+            <span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
               {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
             </span>
             <span class="card__title">
               <span class="card__name">{{ b.name }}</span>
+              {% if b.honorific_name %}<span class="card__honorific">{{ b.honorific_name }}</span>{% endif %}
+            </span>
+            <span class="flag {{ '' if b.flag_date else 'flag--empty' }}" style="margin-left:auto;flex-shrink:0" title="{{ 'Бойовий прапор ЗСУ вручено' if b.flag_date else 'Прапор не вручено' }}">
+              {% if b.flag_date %}<img src="/static/img/zsu-ensign.svg" alt="">{% endif %}
             </span>
           </div>
         </a>
