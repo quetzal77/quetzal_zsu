@@ -59,7 +59,20 @@
 
   <div>
     <div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
-    <div class="grid-cards grid-cards--compact">
+    {% if corps_list %}
+    <div class="page-eyebrow" style="margin-bottom:8px">Армійські корпуси</div>
+    <div class="corps-filter" id="corps-filter">
+      {% for c in corps_list %}
+      <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}">
+        <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
+          {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
+        </span>
+        <span class="corps-filter__name">{{ c.corps_name }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="grid-cards grid-cards--compact" id="brigade-cards">
       {% for b in brigades %}
         {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
           <div class="divider">
@@ -69,7 +82,7 @@
             <span>{{ b.troop_type_name or 'Без типу військ' }}</span>
           </div>
         {% endif %}
-        <a class="card card--compact brigade-row" href="/brigades/{{ b.brigade_id }}">
+        <a class="card card--compact brigade-row" data-corps-id="{{ b.corps_id or '' }}" href="/brigades/{{ b.brigade_id }}">
           <div class="card__head">
             <span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
               {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
@@ -89,4 +102,41 @@
     </div>
   </div>
 </div>
+
+{% if corps_list %}
+<script>
+(function () {
+  var filter = document.getElementById('corps-filter');
+  if (!filter) return;
+  var buttons = filter.querySelectorAll('.corps-filter__item');
+  var cards = document.querySelectorAll('#brigade-cards .brigade-row');
+  var dividers = document.querySelectorAll('#brigade-cards > .divider');
+  var activeId = null;
+
+  function apply() {
+    cards.forEach(function (card) {
+      card.style.display = (!activeId || card.dataset.corpsId === activeId) ? '' : 'none';
+    });
+    dividers.forEach(function (divider) {
+      var el = divider.nextElementSibling;
+      var hasVisible = false;
+      while (el && !el.classList.contains('divider')) {
+        if (el.style.display !== 'none') { hasVisible = true; break; }
+        el = el.nextElementSibling;
+      }
+      divider.style.display = hasVisible ? '' : 'none';
+    });
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.dataset.corpsId;
+      activeId = (activeId === id) ? null : id;
+      buttons.forEach(function (b) { b.classList.toggle('is-active', b.dataset.corpsId === activeId); });
+      apply();
+    });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

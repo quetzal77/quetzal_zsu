@@ -123,6 +123,7 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
 
     brigades = db.execute(
         """SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
+                  b.corps_id,
                   tt.type_name AS troop_type_name,
                   tt.collar_emblem_file AS troop_type_collar_file,
                   (
@@ -144,6 +145,20 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
         (branch["branch_id"] if branch else -1,),
     ).fetchall()
 
+    corps_ids = {b["corps_id"] for b in brigades if b["corps_id"]}
+    corps_list = []
+    if corps_ids:
+        placeholders = ",".join("?" * len(corps_ids))
+        corps_list = db.execute(
+            f"""SELECT corps_id, corps_name, emblem_file
+                FROM army_corps
+                WHERE corps_id IN ({placeholders})
+                ORDER BY corps_name COLLATE UKRAINIAN""",
+            tuple(corps_ids),
+        ).fetchall()
+
     return templates.TemplateResponse(
-        request, "zsu_branch.html", {"item": item, "branch": branch, "brigades": brigades}
+        request,
+        "zsu_branch.html",
+        {"item": item, "branch": branch, "brigades": brigades, "corps_list": corps_list},
     )
