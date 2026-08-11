@@ -9,9 +9,10 @@ router = APIRouter(tags=["zsu"])
 
 # Статична структура ЗСУ для сторінки-довідника. Плашки поки не клікабельні —
 # data-slug лишається заготовкою під майбутній роутинг (напр. /zsu/{slug}).
-# Функціональність готова лише для "Сили безпілотних систем" і "Сили спеціальних
-# операцій" — решта плашок заморожені (disabled) до появи відповідних сторінок.
-ACTIVE_SLUGS = {"unmanned-systems-forces", "special-operations-forces", "air-assault-troops"}
+# Функціональність готова лише для "Сили безпілотних систем", "Сили спеціальних
+# операцій", "Десантно-штурмові війська" і "Військово-морські сили" — решта плашок
+# заморожені (disabled) до появи відповідних сторінок.
+ACTIVE_SLUGS = {"unmanned-systems-forces", "special-operations-forces", "air-assault-troops", "navy"}
 STRUCTURE = [
     {
         "title": "Загальна структура",
@@ -27,7 +28,8 @@ STRUCTURE = [
         "items": [
             {"slug": "ground-forces", "mark": "СВ", "name": "Сухопутні війська"},
             {"slug": "air-force", "mark": "ПС", "name": "Повітряні Сили"},
-            {"slug": "navy", "mark": "ВМС", "name": "Військово-Морські Сили"},
+            {"slug": "navy", "mark": "ВМС", "name": "Військово-морські сили",
+             "icon": "forces/vms_patch.png"},
         ],
     },
     {
@@ -123,7 +125,7 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
 
     brigades = db.execute(
         """SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
-                  b.corps_id,
+                  b.corps_id, b.territorial_command_id,
                   tt.type_name AS troop_type_name,
                   tt.collar_emblem_file AS troop_type_collar_file,
                   (
@@ -145,6 +147,18 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
         (branch["branch_id"] if branch else -1,),
     ).fetchall()
 
+    command_ids = {b["territorial_command_id"] for b in brigades if b["territorial_command_id"]}
+    command_list = []
+    if command_ids:
+        placeholders = ",".join("?" * len(command_ids))
+        command_list = db.execute(
+            f"""SELECT command_id, command_name
+                FROM territorial_commands
+                WHERE command_id IN ({placeholders})
+                ORDER BY command_name COLLATE UKRAINIAN""",
+            tuple(command_ids),
+        ).fetchall()
+
     corps_ids = {b["corps_id"] for b in brigades if b["corps_id"]}
     corps_list = []
     if corps_ids:
@@ -160,5 +174,11 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     return templates.TemplateResponse(
         request,
         "zsu_branch.html",
-        {"item": item, "branch": branch, "brigades": brigades, "corps_list": corps_list},
+        {
+            "item": item,
+            "branch": branch,
+            "brigades": brigades,
+            "command_list": command_list,
+            "corps_list": corps_list,
+        },
     )
