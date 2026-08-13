@@ -18,11 +18,13 @@ CREATE TABLE users (
 -- Lookup tables
 -- ---------------------------------------------------------------------
 
--- Усі поля роду військ, крім назви, винесені в окрему таблицю
--- military_branch_details (1:1) — military_branches.details_id посилається
--- на неї за ключем.
+-- Самостійний довідник деталей роду військ (керується окремою плашкою
+-- "Деталі родів військ" в /settings); military_branches.details_id обирає
+-- потрібний рядок за details_name — так само, як territorial_commands
+-- обирає рід військ через military_branch_id.
 CREATE TABLE military_branch_details (
     details_id         INTEGER PRIMARY KEY,
+    details_name       TEXT NOT NULL UNIQUE,
     emblem_file        TEXT, -- посилання/ім'я файлу герба роду військ
     flag_file          TEXT, -- посилання/ім'я файлу прапора роду військ
     founded_date       DATE,
@@ -33,19 +35,23 @@ CREATE TABLE military_branch_details (
     updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE military_branches (
     branch_id          INTEGER PRIMARY KEY,
     branch_name        TEXT NOT NULL UNIQUE,
-    details_id         INTEGER REFERENCES military_branch_details (details_id),
+    details_id         INTEGER REFERENCES military_branch_details (details_id)
+                               ,
     created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE territorial_commands (
-    command_id     INTEGER PRIMARY KEY,
-    command_name   TEXT NOT NULL UNIQUE,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    command_id           INTEGER PRIMARY KEY,
+    command_name         TEXT NOT NULL UNIQUE,
+    military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому підпорядковане ОК
+    details_id           INTEGER REFERENCES military_branch_details (details_id),
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE army_corps (
@@ -125,6 +131,8 @@ CREATE TABLE locations (
 CREATE INDEX idx_locations_region_id ON locations (region_id);
 CREATE INDEX idx_military_branch_details_hq_location_id ON military_branch_details (hq_location_id);
 CREATE INDEX idx_military_branches_details_id ON military_branches (details_id);
+CREATE INDEX idx_territorial_commands_military_branch_id ON territorial_commands (military_branch_id);
+CREATE INDEX idx_territorial_commands_details_id ON territorial_commands (details_id);
 
 -- ---------------------------------------------------------------------
 -- Core entities

@@ -17,6 +17,20 @@ _LOOKUP_TABLES = {
     "military-branches": {
         "table": "military_branches", "id_col": "branch_id", "name_col": "branch_name",
         "label": "Роди військ", "singular": "рід військ",
+        # Деталі (герб/прапор/дата заснування/штаб тощо) більше не редагуються
+        # тут інлайн — обираються окремим записом з плашки "Деталі родів
+        # військ" за details_name, так само як ОК обирає рід військ.
+        "extra_cols": [
+            {"col": "details_id", "label": "Деталі", "type": "branch-details"},
+        ],
+        "dependents": [
+            {"table": "brigades", "fk_col": "military_branch_id", "name_col": "name", "label": "бригад"},
+            {"table": "territorial_commands", "fk_col": "military_branch_id", "name_col": "command_name", "label": "оперативних командувань"},
+        ],
+    },
+    "military-branch-details": {
+        "table": "military_branch_details", "id_col": "details_id", "name_col": "details_name",
+        "label": "Деталі родів військ", "singular": "запис деталей роду військ",
         "extra_cols": [
             {"col": "founded_date", "label": "Дата заснування", "type": "date"},
             {"col": "hq_location_id", "label": "Штаб", "type": "location"},
@@ -25,13 +39,9 @@ _LOOKUP_TABLES = {
             {"col": "patch_file", "label": "Нарукавний знак"},
             {"col": "beret_badge_file", "label": "Беретний знак"},
         ],
-        # Усі extra_cols фізично живуть у military_branch_details, на яку
-        # military_branches посилається через details_id (fk_col нижче) —
-        # _lookup_rows/create/update/delete підтягують/пишуть їх туди по ключу.
-        "details": {"table": "military_branch_details", "id_col": "details_id", "fk_col": "details_id"},
         "wide": True,  # забагато полів в рядку для вузької колонки
         "dependents": [
-            {"table": "brigades", "fk_col": "military_branch_id", "name_col": "name", "label": "бригад"},
+            {"table": "military_branches", "fk_col": "details_id", "name_col": "branch_name", "label": "родів військ"},
         ],
     },
     "army-corps": {
@@ -50,6 +60,11 @@ _LOOKUP_TABLES = {
     "territorial-commands": {
         "table": "territorial_commands", "id_col": "command_id", "name_col": "command_name",
         "label": "Оперативні командування", "singular": "оперативне командування",
+        "extra_cols": [
+            {"col": "military_branch_id", "label": "Рід військ", "type": "branch"},
+            {"col": "details_id", "label": "Деталі", "type": "branch-details"},
+        ],
+        "wide": True,  # рівно 4 елементи (назва + 2 поля + дії) — влазить в один рядок гріда
         "dependents": [
             {"table": "brigades", "fk_col": "territorial_command_id", "name_col": "name", "label": "бригад"},
         ],
@@ -145,20 +160,10 @@ def _lookup_rows(db: sqlite3.Connection, slug: str):
     config = _lookup_config(slug)
     name_col = config["name_col"]
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
-    details = config.get("details")
+    extra_select = "".join(f", {col}" for col in extra_cols)
     # CAST(... AS INTEGER) читає провідний номер ("11-й корпус" -> 11), тому
     # сортування виходить числове (8 перед 11), а не лексикографічне; для назв
     # без провідного числа CAST дає 0 і сортування падає на текстовий регістр.
-    if details:
-        # extra_cols фізично лежать в details['table'], приєднаній по details_id.
-        extra_select = "".join(f", d.{col}" for col in extra_cols)
-        return db.execute(
-            f"SELECT t.{config['id_col']} AS id, t.{name_col} AS name{extra_select} "
-            f"FROM {config['table']} t "
-            f"LEFT JOIN {details['table']} d ON t.{details['fk_col']} = d.{details['id_col']} "
-            f"ORDER BY CAST(t.{name_col} AS INTEGER), t.{name_col} COLLATE UKRAINIAN"
-        ).fetchall()
-    extra_select = "".join(f", {col}" for col in extra_cols)
     return db.execute(
         f"SELECT {config['id_col']} AS id, {name_col} AS name{extra_select} "
         f"FROM {config['table']} ORDER BY CAST({name_col} AS INTEGER), {name_col} COLLATE UKRAINIAN"
@@ -180,6 +185,22 @@ def _locations(db: sqlite3.Connection):
     ).fetchall()
 
 
+def _military_branches(db: sqlite3.Connection):
+    """Список родів військ для extra_cols типу "branch" (напр. прив'язка
+    оперативного командування до роду військ на плашці "Оперативні командування")."""
+    return db.execute(
+        "SELECT branch_id, branch_name FROM military_branches ORDER BY branch_name COLLATE UKRAINIAN"
+    ).fetchall()
+
+
+def _military_branch_details(db: sqlite3.Connection):
+    """Список записів деталей роду військ для extra_cols типу "branch-details"
+    (плашка "Роди військ" обирає деталі за details_name)."""
+    return db.execute(
+        "SELECT details_id, details_name FROM military_branch_details ORDER BY details_name COLLATE UKRAINIAN"
+    ).fetchall()
+
+
 def _settings_context(db: sqlite3.Connection) -> dict:
     lookups = [
         {
@@ -192,7 +213,13 @@ def _settings_context(db: sqlite3.Connection) -> dict:
         }
         for slug, config in _LOOKUP_TABLES.items()
     ]
-    return {"regions": _regions(db), "locations": _locations(db), "lookups": lookups}
+    return {
+        "regions": _regions(db),
+        "locations": _locations(db),
+        "branches": _military_branches(db),
+        "branch_details": _military_branch_details(db),
+        "lookups": lookups,
+    }
 
 
 @router.get("")
@@ -340,14 +367,18 @@ def delete_location(
     return RedirectResponse(url="/settings#panel-locations", status_code=303)
 
 
+_FK_EXTRA_COL_TYPES = {"location", "branch", "branch-details"}
+
+
 def _extra_col_values(config: dict, form_values: dict) -> list:
-    """Convert raw form strings to DB-ready values per column type: "location"
-    columns are FK ints (like brigades' Optional[str] -> Optional[int] fields),
-    everything else (text/date, both stored as plain TEXT) passes through as-is."""
+    """Convert raw form strings to DB-ready values per column type: "location"/
+    "branch"/"branch-details" columns are FK ints (like brigades' Optional[str] ->
+    Optional[int] fields), everything else (text/date, both stored as plain TEXT)
+    passes through as-is."""
     values = []
     for ec in config.get("extra_cols", []):
         raw = form_values.get(ec["col"])
-        values.append(_optional_int(raw) if ec.get("type") == "location" else (raw or None))
+        values.append(_optional_int(raw) if ec.get("type") in _FK_EXTRA_COL_TYPES else (raw or None))
     return values
 
 
@@ -362,6 +393,8 @@ def create_lookup_item(
     patch_file: Optional[str] = Form(None),
     beret_badge_file: Optional[str] = Form(None),
     collar_emblem_file: Optional[str] = Form(None),
+    military_branch_id: Optional[str] = Form(None),
+    details_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -371,32 +404,17 @@ def create_lookup_item(
         "emblem_file": emblem_file, "flag_file": flag_file,
         "patch_file": patch_file, "beret_badge_file": beret_badge_file,
         "collar_emblem_file": collar_emblem_file,
+        "military_branch_id": military_branch_id,
+        "details_id": details_id,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)
-    details = config.get("details")
+    cols = [config["name_col"], *extra_cols]
+    placeholders = ", ".join("?" for _ in cols)
     try:
-        if details:
-            # extra_cols ідуть в окрему деталізуючу таблицю, а сама назва —
-            # в основну, з посиланням на щойно створений рядок деталей.
-            if extra_cols:
-                placeholders = ", ".join("?" for _ in extra_cols)
-                cur = db.execute(
-                    f"INSERT INTO {details['table']} ({', '.join(extra_cols)}) VALUES ({placeholders})", values
-                )
-            else:
-                cur = db.execute(f"INSERT INTO {details['table']} DEFAULT VALUES")
-            details_id = cur.lastrowid
-            db.execute(
-                f"INSERT INTO {config['table']} ({config['name_col']}, {details['fk_col']}) VALUES (?, ?)",
-                (name, details_id),
-            )
-        else:
-            cols = [config["name_col"], *extra_cols]
-            placeholders = ", ".join("?" for _ in cols)
-            db.execute(
-                f"INSERT INTO {config['table']} ({', '.join(cols)}) VALUES ({placeholders})", [name, *values]
-            )
+        db.execute(
+            f"INSERT INTO {config['table']} ({', '.join(cols)}) VALUES ({placeholders})", [name, *values]
+        )
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -415,6 +433,8 @@ def update_lookup_item(
     patch_file: Optional[str] = Form(None),
     beret_badge_file: Optional[str] = Form(None),
     collar_emblem_file: Optional[str] = Form(None),
+    military_branch_id: Optional[str] = Form(None),
+    details_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -424,51 +444,18 @@ def update_lookup_item(
         "emblem_file": emblem_file, "flag_file": flag_file,
         "patch_file": patch_file, "beret_badge_file": beret_badge_file,
         "collar_emblem_file": collar_emblem_file,
+        "military_branch_id": military_branch_id,
+        "details_id": details_id,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)
-    details = config.get("details")
+    set_clause = ", ".join(f"{col} = ?" for col in [config["name_col"], *extra_cols])
     try:
-        if details:
-            row = db.execute(
-                f"SELECT {details['fk_col']} AS details_id FROM {config['table']} WHERE {config['id_col']} = ?",
-                (item_id,),
-            ).fetchone()
-            details_id = row["details_id"] if row else None
-            if details_id is None:
-                # Захисний випадок (напр. старий рядок без details) — створюємо
-                # рядок деталей і прив'язуємо його замість оновлення неіснуючого.
-                if extra_cols:
-                    placeholders = ", ".join("?" for _ in extra_cols)
-                    cur = db.execute(
-                        f"INSERT INTO {details['table']} ({', '.join(extra_cols)}) VALUES ({placeholders})", values
-                    )
-                else:
-                    cur = db.execute(f"INSERT INTO {details['table']} DEFAULT VALUES")
-                details_id = cur.lastrowid
-                db.execute(
-                    f"UPDATE {config['table']} SET {details['fk_col']} = ? WHERE {config['id_col']} = ?",
-                    (details_id, item_id),
-                )
-            elif extra_cols:
-                set_clause = ", ".join(f"{col} = ?" for col in extra_cols)
-                db.execute(
-                    f"UPDATE {details['table']} SET {set_clause}, updated_at = CURRENT_TIMESTAMP "
-                    f"WHERE {details['id_col']} = ?",
-                    [*values, details_id],
-                )
-            db.execute(
-                f"UPDATE {config['table']} SET {config['name_col']} = ?, updated_at = CURRENT_TIMESTAMP "
-                f"WHERE {config['id_col']} = ?",
-                (name, item_id),
-            )
-        else:
-            set_clause = ", ".join(f"{col} = ?" for col in [config["name_col"], *extra_cols])
-            db.execute(
-                f"UPDATE {config['table']} SET {set_clause}, updated_at = CURRENT_TIMESTAMP "
-                f"WHERE {config['id_col']} = ?",
-                [name, *values, item_id],
-            )
+        db.execute(
+            f"UPDATE {config['table']} SET {set_clause}, updated_at = CURRENT_TIMESTAMP "
+            f"WHERE {config['id_col']} = ?",
+            [name, *values, item_id],
+        )
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -495,18 +482,8 @@ def delete_lookup_item(
         context["delete_blocked_message"] = _delete_blocked_message(item_label, blockers)
         context["scroll_to"] = f"panel-{slug}"
         return templates.TemplateResponse(request, "settings.html", context, status_code=400)
-    details = config.get("details")
     try:
-        details_id = None
-        if details:
-            row = db.execute(
-                f"SELECT {details['fk_col']} AS details_id FROM {config['table']} WHERE {config['id_col']} = ?",
-                (item_id,),
-            ).fetchone()
-            details_id = row["details_id"] if row else None
         db.execute(f"DELETE FROM {config['table']} WHERE {config['id_col']} = ?", (item_id,))
-        if details_id is not None:
-            db.execute(f"DELETE FROM {details['table']} WHERE {details['id_col']} = ?", (details_id,))
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
