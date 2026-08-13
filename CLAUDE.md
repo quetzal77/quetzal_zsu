@@ -99,6 +99,11 @@ python -m uvicorn app.main:app --reload
 - **`brigades`** — основна таблиця з'єднань; FK на `military_branches`, `army_corps`,
   `territorial_commands`, `troop_types`, `unit_types`, `locations`; поле `emblem_file` — ім'я
   файлу в `static/img/`; `unit_type_id` — тип з'єднання (Бригада / Полк / Батальйон тощо)
+- **`military_branches`** — довідник родів військ; лише `branch_name` і FK `details_id` →
+  `military_branch_details` (1:1). Усі інші поля (`founded_date`, `hq_location_id`, `emblem_file`,
+  `flag_file`, `patch_file`, `beret_badge_file`) винесені в `military_branch_details` — плашка
+  «Роди військ» в `/settings` (`app/routers/settings.py`, конфіг `"details"` в `_LOOKUP_TABLES`)
+  прозоро читає/пише їх туди по `details_id`, а `/zsu/{slug}` підтягує через `LEFT JOIN`
 - **`army_corps`** — довідник корпусів; `founded_date` (дата заснування) та `emblem_file`
   (емблема корпусу) — редагуються на плашці «Армійські корпуси» в `/settings`
 - **`unit_types`** — довідник типів з'єднань (Бригада / Полк / Батальйон...), FK з `brigades.unit_type_id`

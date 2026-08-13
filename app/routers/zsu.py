@@ -113,11 +113,14 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     item = _find_item(slug)
 
     # Назва пункту структури співпадає з military_branches.branch_name —
-    # звідти береться герб/прапор/штаб роду військ (див. /settings).
+    # звідти береться герб/прапор/штаб роду військ (див. /settings). Самі поля
+    # винесені в military_branch_details, на яку military_branches посилається
+    # через details_id.
     branch = db.execute(
-        """SELECT mb.*, l.city_name, r.region_name
+        """SELECT mb.branch_id, mb.branch_name, mbd.*, l.city_name, r.region_name
            FROM military_branches mb
-           LEFT JOIN locations l ON mb.hq_location_id = l.location_id
+           LEFT JOIN military_branch_details mbd ON mb.details_id = mbd.details_id
+           LEFT JOIN locations l ON mbd.hq_location_id = l.location_id
            LEFT JOIN regions r ON l.region_id = r.region_id
            WHERE mb.branch_name = ?""",
         (item["name"],),
