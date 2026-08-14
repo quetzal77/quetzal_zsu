@@ -2,6 +2,7 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, Request
 
+from app.auth import require_login
 from app.database import get_db
 from app.templates import templates
 
@@ -26,7 +27,11 @@ def _battle_status(start_date: str | None, end_date: str | None) -> str | None:
 
 
 @router.get("/stats")
-def stats(request: Request, db: sqlite3.Connection = Depends(get_db)):
+def stats(
+    request: Request,
+    db: sqlite3.Connection = Depends(get_db),
+    _username: str = Depends(require_login),
+):
     counts = {
         "brigades": db.execute("SELECT COUNT(*) FROM brigades").fetchone()[0],
         "battles": db.execute("SELECT COUNT(*) FROM battles").fetchone()[0],

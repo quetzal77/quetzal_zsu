@@ -1,19 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Битви — Портал бригад ЗСУ{% endblock %}
+{% block title %}Битви — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
 <div class="page-eyebrow">Хронологія битв</div>
 
+{% if request.session.get('username') %}
+<div class="toolbar" style="justify-content:flex-end;margin-bottom:20px">
+  <a class="btn-primary" href="/battles/new">＋ Додати битву</a>
+</div>
+{% endif %}
+
+{% if battles %}
+<div class="timeline">
+  <div class="timeline__track">
+    {% for b in battles %}
+      <a class="timeline__node {{ 'is-active' if b.status == 'триває' }}" href="/battles/{{ b.battle_id }}">
+        <div class="line">
+          <span class="diamond"></span>
+          <span class="bar"></span>
+        </div>
+        <div class="period">{{ b.period }}</div>
+        <div class="name">{{ b.name }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <div class="grid-cards">
   {% for b in battles %}
+    {% if loop.first or b.year != battles[loop.index0 - 1].year %}
+      <div class="divider"><span>{{ b.year or 'Без дати' }}</span></div>
+    {% endif %}
     <a class="card" href="/battles/{{ b.battle_id }}">
       <div class="card__head">
         <span class="card__title">
           <span class="card__name">{{ b.name }}</span>
-          <span class="card__sub mono">{{ b.start_date or '' }}{% if b.end_date %} – {{ b.end_date }}{% endif %}</span>
+          <span class="card__sub mono">{{ b.start_date | uk_date }}{% if b.end_date %} – {{ b.end_date | uk_date }}{% endif %}</span>
         </span>
       </div>
       {% if b.city_name %}<div class="tags"><span class="tag">◈ {{ b.city_name }}{% if b.region_name %}, {{ b.region_name }}{% endif %}</span></div>{% endif %}
-      {% if b.description %}<div style="color:var(--muted);font-size:13px;line-height:1.5">{{ b.description|truncate(120) }}</div>{% endif %}
+      {% if b.description %}<div style="color:var(--muted);font-size:13px;line-height:1.5">{{ b.description|striptags|truncate(120) }}</div>{% endif %}
     </a>
   {% else %}
     <div class="empty" style="grid-column:1/-1">Битви ще не додані.</div>

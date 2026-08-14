@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% block title %}Налаштування — Портал з'єднань ЗСУ{% endblock %}
+
+{# ── Універсальна секція для довідників виду "id + одна назва" (lookups),
+     опційно з додатковими колонками (текст/дата/локація). mode="grid" —
+     поле займає всю комірку фіксованого гріда (wide-панелі, багато полів);
+     mode="flex" — гнучка ширина в звичайному flex-рядку (1-2 додаткових поля). ── #}
+{% macro extra_field(ec, form_id, value, locations, branches=[], branch_details=[], mode='grid') %}
+  {% set sizing = 'width:100%;box-sizing:border-box' if mode == 'grid' else 'flex:1 1 140px;min-width:0' %}
+  {% set form_attr = (' form="' ~ form_id ~ '"') if form_id else '' %}
+  {% if ec.type == 'location' %}
+    <select name="{{ ec.col }}"{{ form_attr|safe }}
+            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+      <option value="">{{ ec.label }}: —</option>
+      {% for l in locations %}
+        <option value="{{ l.location_id }}" {{ 'selected' if value == l.location_id }}>{{ l.city_name }}, {{ l.region_name }}</option>
+      {% endfor %}
+    </select>
+  {% elif ec.type == 'branch' %}
+    <select name="{{ ec.col }}"{{ form_attr|safe }}
+            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+      <option value="">{{ ec.label }}: —</option>
+      {% for b in branches %}
+        <option value="{{ b.branch_id }}" {{ 'selected' if value == b.branch_id }}>{{ b.branch_name }}</option>
+      {% endfor %}
+    </select>
+  {% elif ec.type == 'branch-details' %}
+    <select name="{{ ec.col }}"{{ form_attr|safe }}
+            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+      <option value="">{{ ec.label }}: —</option>
+      {% for d in branch_details %}
+        <option value="{{ d.details_id }}" {{ 'selected' if value == d.details_id }}>{{ d.details_name }}</option>
+      {% endfor %}
+    </select>
+  {% elif ec.type == 'date' %}
+    <input name="{{ ec.col }}"{{ form_attr|safe }} class="mono" value="{{ value or '' }}" placeholder="{{ ec.label }} (РРРР-ММ-ДД)"
+           style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+  {% else %}
+    <input name="{{ ec.col }}"{{ form_attr|safe }} value="{{ value or '' }}" placeholder="{{ ec.label }} (файл/URL)"
+           style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+  {% endif %}
+{% endmacro %}
+
+{# Wide-довідники з багатьма додатковими полями (зараз — Роди військ)
+   розкладаються в фіксований грід 4 колонки: назва + перші 3 додаткові поля
+   в першому рядку, решта полів і кнопки дій — у другому. Інакше 6+ полів в
+   один flex-рядок не влазять і обрізаються за межею плашки. Вузькі довідники
+   з 1-2 додатковими полями (напр. Типи з'єднань) лишаються звичайним
+   flex-рядком, що переноситься за потреби. #}
+{% macro lookup_panel(lu, locations=[], branches=[], branch_details=[]) %}
+  <div class="panel" id="panel-{{ lu.slug }}" style="min-width:0{{ ';grid-column:1 / -1' if lu.wide }}">
+    <div class="panel__head">
+      <span>{{ lu.label }}</span>
+      <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ lu.rows|length }}</span>
+    </div>
+    <div class="panel__body">
+      <div style="max-height:{{ lu.list_max_height or ('320px' if lu.wide else '230px') }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+        {% for item in lu.rows %}
+          {% if lu.wide %}
+          <div class="lookup-grid-row">
+            <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
+                   value="{{ item.name }}" class="lookup-grid-row__name"
+                   style="font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            {% for ec in lu.extra_cols %}
+              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, branches, branch_details) }}
+            {% endfor %}
+            <span class="lookup-grid-row__actions">
+              <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="{{ lu.slug }}-delete-{{ item.id }}"
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити {{ lu.singular }} «{{ item.name }}»?">✕</button>
+            </span>
+          </div>
+          {% else %}
+          <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
+            <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
+                   value="{{ item.name }}"
+                   style="flex:1 1 160px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            {% for ec in lu.extra_cols %}
+              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, branches, branch_details, mode='flex') }}
+            {% endfor %}
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="{{ lu.slug }}-delete-{{ item.id }}"
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити {{ lu.singular }} «{{ item.name }}»?">✕</button>
+            </span>
+          </div>
+          {% endif %}
+        {% else %}
+          <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодного запису.</div>
+        {% endfor %}
+      </div>
+
+      {% if lu.wide %}
+      <form method="post" action="/settings/lookups/{{ lu.slug }}" id="{{ lu.slug }}-create" class="lookup-grid-row" style="padding:0">
+        <input name="name" form="{{ lu.slug }}-create" required placeholder="Нова назва" class="lookup-grid-row__name"
+               style="font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        {% for ec in lu.extra_cols %}
+          {{ extra_field(ec, lu.slug ~ '-create', None, locations, branches, branch_details) }}
+        {% endfor %}
+        <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+      </form>
+      {% else %}
+      <form method="post" action="/settings/lookups/{{ lu.slug }}" style="display:flex;gap:8px;flex-wrap:wrap">
+        <input name="name" required placeholder="Нова назва"
+               style="flex:1 1 160px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        {% for ec in lu.extra_cols %}
+          {{ extra_field(ec, None, None, locations, branches, branch_details, mode='flex') }}
+        {% endfor %}
+        <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% for item in lu.rows %}
+    <form id="{{ lu.slug }}-edit-{{ item.id }}" method="post"
+          action="/settings/lookups/{{ lu.slug }}/{{ item.id }}/edit" style="display:none"></form>
+    <form id="{{ lu.slug }}-delete-{{ item.id }}" method="post"
+          action="/settings/lookups/{{ lu.slug }}/{{ item.id }}/delete" style="display:none"></form>
+  {% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="page-eyebrow">Налаштування</div>
+<h1 style="margin:0 0 28px;font-size:30px;font-weight:700;color:var(--ink)">Керування довідниками</h1>
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;align-items:start">
+
+  {# Явний порядок плашок (не порядок словника _LOOKUP_TABLES): Роди військ →
+     Деталі родів військ → Оперативні командування → Армійські корпуси →
+     Типи родів військ → Типи з'єднань → Локації → Регіони → решта довідників. #}
+  {% for lu in lookups if lu.slug == 'military-branches' %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'military-branch-details' %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'territorial-commands' %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'army-corps' %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'troop-types' %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'unit-types' %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+  {# ── Локації (половина ширини, як інші плашки) ── #}
+  <div class="panel" id="panel-locations" style="min-width:0">
+    <div class="panel__head">
+      <span>Локації</span>
+      <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ locations|length }}</span>
+    </div>
+    <div class="panel__body">
+      {% if location_error %}
+      <div class="empty" style="margin:0 0 12px;color:#B3261E">{{ location_error }}</div>
+      {% endif %}
+      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+        {% for l in locations %}
+          <div class="list-row" style="padding:8px 6px;flex-wrap:wrap">
+            <input name="city_name" form="location-edit-{{ l.location_id }}" required
+                   value="{{ l.city_name }}"
+                   style="flex:1 1 140px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            <select name="region_id" form="location-edit-{{ l.location_id }}"
+                    style="flex:1 1 140px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+              {% for r in regions %}
+                <option value="{{ r.region_id }}" {{ 'selected' if r.region_id == l.region_id }}>{{ r.region_name }}</option>
+              {% endfor %}
+            </select>
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="submit" form="location-edit-{{ l.location_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="location-delete-{{ l.location_id }}"
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити локацію «{{ l.city_name }}»?">✕</button>
+            </span>
+          </div>
+        {% else %}
+          <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодної локації.</div>
+        {% endfor %}
+      </div>
+
+      {% if regions %}
+        <form method="post" action="/settings/locations" style="display:flex;gap:8px;flex-wrap:wrap">
+          <input name="city_name" required placeholder="Нове місто"
+                 style="flex:1 1 140px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+          <select name="region_id" required
+                  style="flex:1 1 140px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+            {% for r in regions %}
+              <option value="{{ r.region_id }}">{{ r.region_name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+        </form>
+      {% else %}
+        <div style="color:var(--faint);font-size:13px">Спочатку додай хоча б один регіон.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Регіони ── #}
+  <div class="panel" id="panel-regions" style="min-width:0">
+    <div class="panel__head">
+      <span>Регіони</span>
+      <span class="mono" style="font-weight:400;letter-spacing:0;text-transform:none">{{ regions|length }}</span>
+    </div>
+    <div class="panel__body">
+      <div style="max-height:230px;overflow-y:auto;margin:-6px -6px 16px;padding:6px">
+        {% for r in regions %}
+          <div class="list-row" style="padding:8px 6px">
+            <input name="region_name" form="region-edit-{{ r.region_id }}" required
+                   value="{{ r.region_name }}"
+                   style="flex:1;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="submit" form="region-edit-{{ r.region_id }}"
+                      class="btn-ghost" style="padding:6px 10px;font-size:12px">Зберегти</button>
+              <button type="submit" form="region-delete-{{ r.region_id }}"
+                      class="btn-ghost js-confirm-delete" style="padding:6px 10px;font-size:12px;color:var(--muted)"
+                      data-confirm="Видалити регіон «{{ r.region_name }}»?">✕</button>
+            </span>
+          </div>
+        {% else %}
+          <div style="padding:14px 6px;color:var(--faint);font-size:13px">Немає жодного регіону.</div>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="/settings/regions" style="display:flex;gap:8px">
+        <input name="region_name" required placeholder="Нова назва регіону"
+               style="flex:1;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
+        <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
+      </form>
+    </div>
+  </div>
+
+  {% for lu in lookups if lu.slug not in ['military-branches', 'military-branch-details', 'territorial-commands', 'army-corps', 'troop-types', 'unit-types'] %}
+    {{ lookup_panel(lu, locations, branches, branch_details) }}
+  {% endfor %}
+
+</div>
+
+{# ── Приховані форми для редагування/видалення регіонів ── #}
+{% for r in regions %}
+  <form id="region-edit-{{ r.region_id }}" method="post"
+        action="/settings/regions/{{ r.region_id }}/edit" style="display:none"></form>
+  <form id="region-delete-{{ r.region_id }}" method="post"
+        action="/settings/regions/{{ r.region_id }}/delete" style="display:none"></form>
+{% endfor %}
+
+{# ── Приховані форми для редагування/видалення локацій ── #}
+{% for l in locations %}
+  <form id="location-edit-{{ l.location_id }}" method="post"
+        action="/settings/locations/{{ l.location_id }}/edit" style="display:none"></form>
+  <form id="location-delete-{{ l.location_id }}" method="post"
+        action="/settings/locations/{{ l.location_id }}/delete" style="display:none"></form>
+{% endfor %}
+
+{# ── Модальні вікна: кастомне підтвердження видалення (замість window.confirm,
+     що показує "адреса:порт says") і попередження про пов'язані сутності
+     (замість window.alert) ── #}
+<div class="modal-backdrop" id="confirm-modal" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true">
+    <p class="modal__message" id="confirm-modal-message"></p>
+    <div class="modal__actions">
+      <button type="button" class="btn-ghost" id="confirm-modal-cancel">Скасувати</button>
+      <button type="button" class="btn-danger" id="confirm-modal-ok">Видалити</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="warning-modal" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true">
+    <p class="modal__message" id="warning-modal-message"></p>
+    <div class="modal__actions">
+      <button type="button" class="btn-outline" id="warning-modal-ok">Зрозуміло</button>
+    </div>
+  </div>
+</div>
+
+{# Дані з бекенду для скрипта нижче: список сутностей, що блокують видалення
+   (текст, а не JS-рядок, — щоб лапки/апострофи в назвах не ламали синтаксис),
+   і id панелі, до якої треба проскролити після дії. #}
+{% if delete_blocked_message %}
+<div id="delete-blocked-message" hidden>{{ delete_blocked_message }}</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var confirmBackdrop = document.getElementById('confirm-modal');
+  var confirmMessage = document.getElementById('confirm-modal-message');
+  var confirmOk = document.getElementById('confirm-modal-ok');
+  var confirmCancel = document.getElementById('confirm-modal-cancel');
+  var pendingForm = null;
+
+  function openConfirm(form, message) {
+    pendingForm = form;
+    confirmMessage.textContent = message;
+    confirmBackdrop.hidden = false;
+  }
+  function closeConfirm() {
+    confirmBackdrop.hidden = true;
+    pendingForm = null;
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.js-confirm-delete');
+    if (!btn) return;
+    e.preventDefault();
+    var form = document.getElementById(btn.getAttribute('form'));
+    if (form) openConfirm(form, btn.getAttribute('data-confirm'));
+  });
+  confirmOk.addEventListener('click', function () {
+    var form = pendingForm;
+    closeConfirm();
+    if (form) form.submit();
+  });
+  confirmCancel.addEventListener('click', closeConfirm);
+  confirmBackdrop.addEventListener('click', function (e) {
+    if (e.target === confirmBackdrop) closeConfirm();
+  });
+
+  var warningBackdrop = document.getElementById('warning-modal');
+  var warningMessage = document.getElementById('warning-modal-message');
+  var warningOk = document.getElementById('warning-modal-ok');
+  function closeWarning() { warningBackdrop.hidden = true; }
+  warningOk.addEventListener('click', closeWarning);
+  warningBackdrop.addEventListener('click', function (e) {
+    if (e.target === warningBackdrop) closeWarning();
+  });
+
+  // Після редагування/додавання/видалення сторінка перерендерюється заново,
+  // тож без цього браузер завжди підкидає скрол до самого верху — повертаємо
+  // користувача до тієї ж плашки, з якою він щойно працював.
+  var scrollTarget = "{{ scroll_to or '' }}";
+  if (scrollTarget) {
+    var panel = document.getElementById(scrollTarget);
+    if (panel) panel.scrollIntoView({ block: 'start' });
+  }
+
+  var blockedEl = document.getElementById('delete-blocked-message');
+  if (blockedEl) {
+    warningMessage.textContent = blockedEl.textContent;
+    warningBackdrop.hidden = false;
+  }
+})();
+</script>
+{% endblock %}

@@ -64,3 +64,6 @@ Thumbs.db
 
 # quetzal_zsu.ps1 runtime state
 .quetzal_zsu.pid
+
+# Локальні знімки БД (scripts/backup_db.py) — не частина історії проєкту
+# data/backups/

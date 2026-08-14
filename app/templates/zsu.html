@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Збройні Сили України{% endblock %}
+{% block content %}
+<div class="page-eyebrow">Структура Збройних Сил України</div>
+
+{% for group in structure %}
+<div class="divider"><span>{{ group.title }}</span></div>
+<div class="tiles">
+  {% for item in group['items'] %}
+  {% if item.active %}
+  <a class="tile" data-slug="{{ item.slug }}" href="/zsu/{{ item.slug }}">
+  {% else %}
+  <button type="button" class="tile tile--frozen" data-slug="{{ item.slug }}" disabled>
+  {% endif %}
+    {% if item.active and item.icon %}
+    <span class="tile__mark tile__mark--icon"><img src="/static/img/{{ item.icon }}" alt="{{ item.name }}"></span>
+    {% else %}
+    <span class="tile__mark">{{ item.mark }}</span>
+    {% endif %}
+    <span class="tile__body">
+      <span class="tile__name">{{ item.name }}</span>
+      {% if item.hint %}<span class="tile__hint">{{ item.hint }}</span>{% endif %}
+    </span>
+  {% if item.active %}</a>{% else %}</button>{% endif %}
+  {% endfor %}
+</div>
+{% endfor %}
+{% endblock %}

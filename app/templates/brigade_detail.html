@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ brigade.name }} — Портал бригад ЗСУ{% endblock %}
+{% block title %}{{ brigade.name }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
-<a class="back-link" href="/brigades">← До реєстру бригад</a>
+<a class="back-link" href="/brigades">← До реєстру підрозділів</a>
 
 <div class="detail-head">
   <div class="detail-emblem {{ 'has-image' if brigade.emblem_file }}">
@@ -17,7 +17,12 @@
     {% if brigade.callsign %}<div class="sub">{{ brigade.callsign }}</div>{% endif %}
   </div>
   {% if request.session.get('username') %}
-  <a class="btn-outline" href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
+  <div style="display:flex;gap:10px">
+    <a class="btn-outline" href="/brigades/{{ brigade.brigade_id }}/edit">Редагувати</a>
+    <button type="submit" form="delete-brigade-form" class="btn-danger"
+            onclick="return confirm('Видалити це з'єднання? Цю дію не можна скасувати.')">Видалити</button>
+  </div>
+  <form id="delete-brigade-form" method="post" action="/brigades/{{ brigade.brigade_id }}/delete" style="display:none"></form>
   {% endif %}
 </div>
 
@@ -26,13 +31,15 @@
     <div class="panel">
       <div class="panel__head">Довідка про з'єднання</div>
       <dl class="spec">
-        <div class="row"><dt>Рід військ</dt><dd>{{ brigade.branch_name or '—' }}</dd></div>
+        <div class="row"><dt>Рід військ</dt><dd>{% if branch_zsu_slug %}<a class="spec-link" href="/zsu/{{ branch_zsu_slug }}">{{ brigade.branch_name }}</a>{% else %}{{ brigade.branch_name or '—' }}{% endif %}</dd></div>
         <div class="row"><dt>Корпус</dt><dd>{{ brigade.corps_name or '—' }}</dd></div>
         <div class="row"><dt>Тер. командування</dt><dd>{{ brigade.command_name or '—' }}</dd></div>
         <div class="row"><dt>Тип військ</dt><dd>{{ brigade.type_name or '—' }}</dd></div>
+        <div class="row"><dt>Тип з'єднання</dt><dd>{{ brigade.unit_type_name or '—' }}</dd></div>
         <div class="row"><dt>ППД</dt><dd>{{ brigade.city_name or '—' }}{% if brigade.region_name %}, {{ brigade.region_name }}{% endif %}</dd></div>
-        <div class="row"><dt>Засновано</dt><dd class="mono">{{ brigade.formed_date or '—' }}</dd></div>
-        <div class="row"><dt>Бойовий прапор</dt><dd class="mono">{{ brigade.flag_date or '—' }}</dd></div>
+        <div class="row"><dt>Засновано</dt><dd>{{ brigade.formed_date | uk_date }}</dd></div>
+        <div class="row"><dt>Стала бригадою</dt><dd>{{ brigade.brigade_date | uk_date }}</dd></div>
+        <div class="row"><dt>Бойовий прапор</dt><dd>{{ brigade.flag_date | uk_date }}</dd></div>
       </dl>
     </div>
 
@@ -41,7 +48,7 @@
       <div class="panel">
           <div class="panel__head">Традиції</div>
           {% for tr in traditions %}
-          <div class="list-row">
+          <a class="list-row {{ 'list-row--with-photo' if (tr.tradition_photo or tr.brigade_tradition_photo) }}" href="/traditions/{{ tr.tradition_id }}">
               <span style="display:flex;align-items:center;gap:12px;min-width:0">
                 <span class="dot"></span>
                     {% if tr.title == "Почесне найменування частини" %}
@@ -53,7 +60,13 @@
                         <span style="color:var(--text)">{{ tr.title }}</span>
                     {% endif %}
               </span>
-          </div>
+              {% if tr.tradition_photo %}
+              <img src="/static/img/{{ tr.tradition_photo }}" alt="{{ tr.title }}">
+              {% endif %}
+              {% if tr.brigade_tradition_photo %}
+              <img src="/static/img/{{ tr.brigade_tradition_photo }}" alt="{{ tr.title }}">
+              {% endif %}
+          </a>
           {% endfor %}
       </div>
       {% endif %}
@@ -74,10 +87,10 @@
     <div class="panel">
       <div class="panel__head">Спорядження</div>
       {% for item in equipment %}
-        <div class="list-row">
+        <a class="list-row" href="/equipment/{{ item.equipment_id }}">
           <span style="display:flex;align-items:center;gap:12px;min-width:0"><span class="dot"></span>
             <span style="color:var(--text)">{{ item.name }}</span></span>
-        </div>
+        </a>
       {% endfor %}
     </div>
     {% endif %}

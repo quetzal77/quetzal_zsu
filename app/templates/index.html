@@ -1,17 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Бригади — Портал бригад ЗСУ{% endblock %}
+{% block title %}з'єднання — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
-{% set view = request.query_params.get('view', 'cards') %}
-{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.region_id %}
+{% set view = view or 'cards' %}
+{% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.unit_type_id or filters.region_id %}
 
 <form method="get" action="/brigades" id="filterform">
   <input type="hidden" name="q" value="{{ request.query_params.get('q','') }}">
+  <input type="hidden" name="panel_open" id="panel_open_input" value="{{ '1' if panel_open else '0' }}">
 
   <div class="page-eyebrow">Реєстр з'єднань</div>
 
   <div class="toolbar">
     <button type="button" class="filters-toggle {{ 'is-on' if has_filters }}"
-            onclick="document.getElementById('filters').classList.toggle('is-hidden')">
+            onclick="var f=document.getElementById('filters'); f.classList.toggle('is-hidden'); document.getElementById('panel_open_input').value = f.classList.contains('is-hidden') ? '0' : '1';">
       Фільтри{% if has_filters %} · активні{% endif %} ▾
     </button>
     <div class="view-toggle">
@@ -19,13 +20,13 @@
       <button type="submit" name="view" value="table" class="{{ 'is-active' if view == 'table' }}">☰ Таблиця</button>
     </div>
     {% if request.session.get('username') %}
-    <a class="btn-primary" href="/brigades/new">＋ Додати бригаду</a>
+    <a class="btn-primary" href="/brigades/new">＋ Додати з'єднання</a>
     {% endif %}
 
 
   </div>
 
-  <div class="filters {{ 'is-hidden' if not has_filters }}" id="filters">
+  <div class="filters {{ 'is-hidden' if not panel_open }}" id="filters">
     <div class="filter-strip">
       <span class="filter-strip__label">Рід військ</span>
       <div class="chips">
@@ -75,6 +76,18 @@
     </div>
 
     <div class="filter-strip">
+      <span class="filter-strip__label">Тип з'єднань</span>
+      <div class="chips">
+        <label class="chip {{ 'is-active' if not filters.unit_type_id }}">
+          <input type="radio" name="unit_type_id" value="" {{ 'checked' if not filters.unit_type_id }} onchange="this.form.submit()" hidden>Усі</label>
+        {% for ut in unit_types %}
+        <label class="chip {{ 'is-active' if filters.unit_type_id == ut.unit_type_id }}">
+          <input type="radio" name="unit_type_id" value="{{ ut.unit_type_id }}" {{ 'checked' if filters.unit_type_id == ut.unit_type_id }} onchange="this.form.submit()" hidden>{{ ut.type_name }}</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-strip">
       <span class="filter-strip__label">Регіон</span>
       <div class="chips">
         <label class="chip {{ 'is-active' if not filters.region_id }}">
@@ -118,7 +131,7 @@
             <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
             <td>{{ b.corps_name or '—' }}</td>
             <td>{{ b.city_name or '—' }}</td>
-            <td class="num-mono">{{ b.formed_date[:4] if b.formed_date else '—' }}</td>
+            <td class="num-mono">{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</td>
             <td>
               {% if b.flag_date %}
                 <span class="flag" title="Бойовий прапор ЗСУ вручено"><img src="/static/img/zsu-ensign.svg" alt=""></span>
@@ -156,7 +169,7 @@
         </div>
         <div class="card__foot">
           <span class="stat-block">
-            <b>{{ b.formed_date[:4] if b.formed_date else '—' }}</b>
+            <b>{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</b>
             <small>рік заснування</small>
           </span>
           <span class="stat-block" style="align-items:flex-end">
@@ -236,7 +249,7 @@
       if (match) visibleCount += 1;
     });
 
-    // Ховаємо заголовки груп (рід військ), під якими не лишилось жодної видимої бригади.
+    // Ховаємо заголовки груп (рід військ), під якими не лишилось жодного видимого з'єднання.
     [dividers, groupRows].forEach(function (headers) {
       headers.forEach(function (header) {
         var sibling = header.nextElementSibling;

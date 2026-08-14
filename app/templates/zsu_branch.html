@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} — Портал з'єднань ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="/zsu">← Структура Збройних Сил України</a>
+
+<div class="detail-head">
+  <div class="detail-head__main">
+    <h1>{{ item.name }}</h1>
+    {% if item.hint %}<div class="sub">{{ item.hint }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="cols-2 cols-2--branch">
+  <div class="panel">
+    <div class="branch-info">
+      <div class="branch-info__row">
+        <dt>Герб</dt>
+        <dd>
+          <span class="branch-info__thumb branch-info__thumb--square {{ 'has-image' if branch and branch.emblem_file }}">
+            {% if branch and branch.emblem_file %}<img src="/static/img/{{ branch.emblem_file }}" alt="Герб: {{ item.name }}">
+            {% else %}{{ item.mark }}{% endif %}
+          </span>
+        </dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Дата заснування</dt>
+        <dd><span class="branch-info__value">{{ (branch.founded_date if branch else None) | uk_date }}</span></dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Штаб</dt>
+        <dd><span class="branch-info__value">{{ (branch.city_name if branch else None) or '—' }}{% if branch and branch.region_name %}, {{ branch.region_name }}{% endif %}</span></dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Прапор</dt>
+        <dd>
+          {% if branch and branch.flag_file %}
+          <span class="branch-info__thumb branch-info__thumb--flag"><img src="/static/img/{{ branch.flag_file }}" alt="Прапор: {{ item.name }}"></span>
+          {% else %}<span class="branch-info__value">—</span>{% endif %}
+        </dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Нарукавний знак</dt>
+        <dd>
+          {% if branch and branch.patch_file %}
+          <span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.patch_file }}" alt="Нарукавний знак: {{ item.name }}"></span>
+          {% else %}<span class="branch-info__value">—</span>{% endif %}
+        </dd>
+      </div>
+      <div class="branch-info__row">
+        <dt>Беретний знак</dt>
+        <dd>
+          {% if branch and branch.beret_badge_file %}
+          <span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.beret_badge_file }}" alt="Беретний знак: {{ item.name }}"></span>
+          {% else %}<span class="branch-info__value">—</span>{% endif %}
+        </dd>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+    {% if command_list %}
+    <div class="page-eyebrow" style="margin-bottom:8px">Оперативні командування</div>
+    <div class="corps-filter" id="command-filter">
+      {% for c in command_list %}
+      <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}">
+        <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
+          {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
+        </span>
+        <span class="corps-filter__name">{{ c.command_name }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if corps_list %}
+    <div class="page-eyebrow" style="margin-bottom:8px">Армійські корпуси</div>
+    <div class="corps-filter" id="corps-filter">
+      {% for c in corps_list %}
+      <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}">
+        <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
+          {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
+        </span>
+        <span class="corps-filter__name">{{ c.corps_name }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="grid-cards grid-cards--compact" id="brigade-cards">
+      {% for b in brigades %}
+        {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
+          <div class="divider">
+            {% if b.troop_type_collar_file %}
+            <img class="divider__collar" src="/static/img/{{ b.troop_type_collar_file }}" alt="Комірна емблема: {{ b.troop_type_name }}">
+            {% endif %}
+            <span>{{ b.troop_type_name or 'Без типу військ' }}</span>
+          </div>
+        {% endif %}
+        <a class="card card--compact brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" href="/brigades/{{ b.brigade_id }}">
+          <div class="card__head">
+            <span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
+              {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
+            </span>
+            <span class="card__title">
+              <span class="card__name">{{ b.name }}</span>
+              {% if b.honorific_name %}<span class="card__honorific">{{ b.honorific_name }}</span>{% endif %}
+            </span>
+            <span class="flag {{ '' if b.flag_date else 'flag--empty' }}" style="margin-left:auto;flex-shrink:0" title="{{ 'Бойовий прапор ЗСУ вручено' if b.flag_date else 'Прапор не вручено' }}">
+              {% if b.flag_date %}<img src="/static/img/zsu-ensign.svg" alt="">{% endif %}
+            </span>
+          </div>
+        </a>
+      {% else %}
+        <div class="empty" style="grid-column:1/-1">З'єднання ще не додано.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if command_list or corps_list %}
+<script>
+(function () {
+  var cards = document.querySelectorAll('#brigade-cards .brigade-row');
+  var dividers = document.querySelectorAll('#brigade-cards > .divider');
+  var filters = [];
+
+  function apply() {
+    cards.forEach(function (card) {
+      var visible = filters.every(function (f) {
+        return !f.activeId || card.dataset[f.dataKey] === f.activeId;
+      });
+      card.style.display = visible ? '' : 'none';
+    });
+    dividers.forEach(function (divider) {
+      var el = divider.nextElementSibling;
+      var hasVisible = false;
+      while (el && !el.classList.contains('divider')) {
+        if (el.style.display !== 'none') { hasVisible = true; break; }
+        el = el.nextElementSibling;
+      }
+      divider.style.display = hasVisible ? '' : 'none';
+    });
+  }
+
+  function setupFilter(filterId, dataKey) {
+    var filter = document.getElementById(filterId);
+    if (!filter) return;
+    var buttons = filter.querySelectorAll('.corps-filter__item');
+    var state = { activeId: null, dataKey: dataKey };
+    filters.push(state);
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset[dataKey];
+        state.activeId = (state.activeId === id) ? null : id;
+        buttons.forEach(function (b) { b.classList.toggle('is-active', b.dataset[dataKey] === state.activeId); });
+        apply();
+      });
+    });
+  }
+
+  setupFilter('command-filter', 'commandId');
+  setupFilter('corps-filter', 'corpsId');
+})();
+</script>
+{% endif %}
+{% endblock %}

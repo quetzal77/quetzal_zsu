@@ -18,30 +18,62 @@ CREATE TABLE users (
 -- Lookup tables
 -- ---------------------------------------------------------------------
 
+-- Самостійний довідник деталей роду військ (керується окремою плашкою
+-- "Деталі родів військ" в /settings); military_branches.details_id обирає
+-- потрібний рядок за details_name — так само, як territorial_commands
+-- обирає рід військ через military_branch_id.
+CREATE TABLE military_branch_details (
+    details_id         INTEGER PRIMARY KEY,
+    details_name       TEXT NOT NULL UNIQUE,
+    emblem_file        TEXT, -- посилання/ім'я файлу герба роду військ
+    flag_file          TEXT, -- посилання/ім'я файлу прапора роду військ
+    founded_date       DATE,
+    hq_location_id     INTEGER REFERENCES locations (location_id), -- локація штабу
+    patch_file         TEXT, -- посилання/ім'я файлу нарукавного знака
+    beret_badge_file   TEXT, -- посилання/ім'я файлу беретного знака
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
 CREATE TABLE military_branches (
-    branch_id      INTEGER PRIMARY KEY,
-    branch_name    TEXT NOT NULL UNIQUE,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    branch_id          INTEGER PRIMARY KEY,
+    branch_name        TEXT NOT NULL UNIQUE,
+    details_id         INTEGER REFERENCES military_branch_details (details_id)
+                               ,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE territorial_commands (
-    command_id     INTEGER PRIMARY KEY,
-    command_name   TEXT NOT NULL UNIQUE,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    command_id           INTEGER PRIMARY KEY,
+    command_name         TEXT NOT NULL UNIQUE,
+    military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому підпорядковане ОК
+    details_id           INTEGER REFERENCES military_branch_details (details_id),
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE army_corps (
     corps_id       INTEGER PRIMARY KEY,
     corps_name     TEXT NOT NULL UNIQUE,
+    founded_date   DATE, -- дата заснування корпусу
+    emblem_file    TEXT, -- посилання/ім'я файлу емблеми корпусу
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE troop_types (
-    type_id        INTEGER PRIMARY KEY,
-    type_name      TEXT NOT NULL UNIQUE,
+    type_id              INTEGER PRIMARY KEY,
+    type_name            TEXT NOT NULL UNIQUE,
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    collar_emblem_file   TEXT -- посилання/ім'я файлу комірної емблеми
+);
+
+CREATE TABLE unit_types (
+    unit_type_id   INTEGER PRIMARY KEY,
+    type_name      TEXT NOT NULL UNIQUE, -- Бригада / Полк / Батальон
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -53,13 +85,25 @@ CREATE TABLE regions (
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE equipment (
-    equipment_id   INTEGER PRIMARY KEY,
-    name           TEXT NOT NULL UNIQUE,
-    description    TEXT,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE equipment_types (
+    equipment_type_id  INTEGER PRIMARY KEY,
+    type_name          TEXT NOT NULL UNIQUE,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE equipment (
+    equipment_id      INTEGER PRIMARY KEY,
+    name              TEXT NOT NULL UNIQUE,
+    description       TEXT,
+    equipment_type_id INTEGER REFERENCES equipment_types (equipment_type_id),
+    photo             TEXT,
+    adopted_date      DATE, -- дата прийняття на озброєння
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_equipment_equipment_type_id ON equipment (equipment_type_id);
 
 CREATE TABLE traditions (
     tradition_id   INTEGER PRIMARY KEY,
@@ -85,6 +129,10 @@ CREATE TABLE locations (
 );
 
 CREATE INDEX idx_locations_region_id ON locations (region_id);
+CREATE INDEX idx_military_branch_details_hq_location_id ON military_branch_details (hq_location_id);
+CREATE INDEX idx_military_branches_details_id ON military_branches (details_id);
+CREATE INDEX idx_territorial_commands_military_branch_id ON territorial_commands (military_branch_id);
+CREATE INDEX idx_territorial_commands_details_id ON territorial_commands (details_id);
 
 -- ---------------------------------------------------------------------
 -- Core entities
@@ -114,8 +162,10 @@ CREATE TABLE brigades (
     troop_type_id            INTEGER REFERENCES troop_types (type_id),
     formed_date              DATE,
     flag_date                DATE,
+    brigade_date             DATE, -- дата, коли підрозділ став бригадою; якщо порожньо, на списках показується formed_date
     location_id              INTEGER REFERENCES locations (location_id),
     emblem_file              TEXT,
+    unit_type_id             INTEGER REFERENCES unit_types (unit_type_id), -- Бригада / Полк / Батальон
     created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (formed_date IS NULL OR flag_date IS NULL OR formed_date <= flag_date)
@@ -126,6 +176,7 @@ CREATE INDEX idx_brigades_corps_id ON brigades (corps_id);
 CREATE INDEX idx_brigades_territorial_command_id ON brigades (territorial_command_id);
 CREATE INDEX idx_brigades_troop_type_id ON brigades (troop_type_id);
 CREATE INDEX idx_brigades_location_id ON brigades (location_id);
+CREATE INDEX idx_brigades_unit_type_id ON brigades (unit_type_id);
 
 -- ---------------------------------------------------------------------
 -- Junction tables (many-to-many)
@@ -134,7 +185,6 @@ CREATE INDEX idx_brigades_location_id ON brigades (location_id);
 CREATE TABLE brigade_battles (
     brigade_id   INTEGER NOT NULL REFERENCES brigades (brigade_id),
     battle_id    INTEGER NOT NULL REFERENCES battles (battle_id),
-    role         TEXT,
     created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (brigade_id, battle_id)
 );

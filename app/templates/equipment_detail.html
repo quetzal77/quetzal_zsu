@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ equipment.name }} — Портал з'єднань ЗСУ{% endblock %}
+{% block content %}
+<a class="back-link" href="/equipment">← До спорядження</a>
+
+<div class="cols-2 cols-2--battle">
+  <div class="panel">
+    <div class="panel__body" style="padding:24px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <div>
+          <div class="detail-eyebrow">{{ equipment.type_name or 'Спорядження' }}</div>
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:700;color:var(--ink);line-height:1.1">{{ equipment.name }}</h1>
+        </div>
+        {% if request.session.get('username') %}
+        <div style="display:flex;gap:10px;flex:none">
+          <a class="btn-outline" href="/equipment/{{ equipment.equipment_id }}/edit">Редагувати</a>
+          <button type="submit" form="delete-equipment-form" class="btn-danger"
+                  onclick="return confirm('Видалити це спорядження? Цю дію не можна скасувати.')">Видалити</button>
+        </div>
+        {% endif %}
+      </div>
+      {% if equipment.adopted_date %}<div class="sub" style="margin-top:8px">На озброєнні з <span class="mono">{{ equipment.adopted_date | uk_date }}</span></div>{% endif %}
+      {% if equipment.description %}<div class="sub" style="margin-top:8px">{{ equipment.description|safe }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    {% if equipment.photo %}
+    <div class="panel">
+      <div class="panel__body" style="padding:24px;text-align:center">
+        <img src="/static/img/{{ equipment.photo }}" alt="{{ equipment.name }}"
+             style="max-width:100%;max-height:260px;width:auto;height:auto;object-fit:contain;border-radius:4px">
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="panel">
+      <div class="panel__head">
+        <span>З'єднання, що використовують</span>
+        <span class="mono" style="color:var(--green)">{{ brigades|length }}</span>
+      </div>
+      {% for b in brigades %}
+        <a class="list-row" href="/brigades/{{ b.brigade_id }}">
+          <span style="display:flex;align-items:center;gap:12px;min-width:0">
+            <span class="emblem" style="width:34px;font-size:12px;{% if b.emblem_file %}height:39.25px;background:transparent;border:none;clip-path:none;{% else %}height:34px;background:var(--line-3);border:1px solid var(--line);color:var(--accent-text);{% endif %}">
+              {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="" style="width:100%;height:100%;object-fit:contain">
+              {% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
+            </span>
+            <span style="color:var(--text)">{{ b.name }}</span>
+          </span>
+          {% if b.branch_name %}<span class="tag tag--branch">{{ b.branch_name }}</span>{% endif %}
+        </a>
+      {% else %}
+        <div class="empty">Жодне з'єднання ще не використовує цей зразок.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if request.session.get('username') %}
+<form id="delete-equipment-form" method="post" action="/equipment/{{ equipment.equipment_id }}/delete" style="display:none"></form>
+{% endif %}
+{% endblock %}

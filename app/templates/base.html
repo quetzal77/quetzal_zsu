@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Портал бригад ЗСУ{% endblock %}</title>
+  <title>{% block title %}Портал з'єднань ЗСУ{% endblock %}</title>
   <link rel="icon" type="image/png" href="/static/img/zsu-tryzub.png">
   <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version() }}">
 </head>
@@ -12,16 +12,20 @@
 <header class="topbar">
   <div class="topbar__accent"></div>
   <div class="topbar__inner">
-    <a class="brand" href="/brigades">
+    <a class="brand" href="/zsu">
       <span class="brand__mark"><img src="/static/img/zsu-emblem.svg" alt="Емблема ЗСУ"></span>
       <span class="brand__name">Збройні сили України</span>
     </a>
     <nav class="nav">
-      <a href="/brigades"   class="{{ 'is-active' if path.startswith('/brigades') }}">Бригади</a>
+      <a href="/zsu"        class="{{ 'is-active' if path.startswith('/zsu') }}">ЗСУ</a>
+      <a href="/brigades"   class="{{ 'is-active' if path.startswith('/brigades') }}">З'єднання</a>
       <a href="/battles"    class="{{ 'is-active' if path.startswith('/battles') }}">Битви</a>
       <a href="/equipment"  class="{{ 'is-active' if path.startswith('/equipment') }}">Спорядження</a>
       <a href="/traditions" class="{{ 'is-active' if path.startswith('/traditions') }}">Традиції</a>
-      <a href="/stats"      class="{{ 'is-active' if path.startswith('/stats') }}">Статистика</a>
+      {% if request.session.get('username') %}
+        <a href="/stats"     class="{{ 'is-active' if path.startswith('/stats') }}">Статистика</a>
+        <a href="/settings" class="{{ 'is-active' if path.startswith('/settings') }}">Налаштування</a>
+      {% endif %}
     </nav>
     <div class="topbar__right">
       <form class="search" method="get" action="/brigades" data-live-search>
@@ -38,11 +42,15 @@
     </div>
   </div>
   <div class="mobile-menu" id="mmenu">
-    <a href="/brigades">Бригади</a>
+    <a href="/zsu">ЗСУ</a>
+    <a href="/brigades">З'єднання</a>
     <a href="/battles">Битви</a>
     <a href="/equipment">Спорядження</a>
     <a href="/traditions">Традиції</a>
-    <a href="/stats">Статистика</a>
+    {% if request.session.get('username') %}
+      <a href="/stats">Статистика</a>
+      <a href="/settings">Налаштування</a>
+    {% endif %}
     <form class="search" method="get" action="/brigades" data-live-search>
       <input id="search-mobile" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
     </form>
@@ -58,7 +66,7 @@
   {% block content %}{% endblock %}
 
   <footer>
-    <span>Портал бригад ЗСУ · довідковий ресурс</span>
+    <span>Портал з'єднань ЗСУ · довідковий ресурс</span>
     <span class="mono">FastAPI · SQLite</span>
   </footer>
 </main>
