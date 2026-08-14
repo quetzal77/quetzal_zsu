@@ -10,9 +10,16 @@ router = APIRouter(tags=["zsu"])
 # Статична структура ЗСУ для сторінки-довідника. Плашки поки не клікабельні —
 # data-slug лишається заготовкою під майбутній роутинг (напр. /zsu/{slug}).
 # Функціональність готова лише для "Сили безпілотних систем", "Сили спеціальних
-# операцій", "Десантно-штурмові війська" і "Військово-морські сили" — решта плашок
-# заморожені (disabled) до появи відповідних сторінок.
-ACTIVE_SLUGS = {"unmanned-systems-forces", "special-operations-forces", "air-assault-troops", "navy"}
+# операцій", "Десантно-штурмові війська", "Військово-морські сили" і "Сили
+# територіальної оборони" (з'єднання ТрО ще не додані — сторінка показує порожній
+# список) — решта плашок заморожені (disabled) до появи відповідних сторінок.
+ACTIVE_SLUGS = {
+    "unmanned-systems-forces",
+    "special-operations-forces",
+    "air-assault-troops",
+    "navy",
+    "territorial-defense-forces",
+}
 STRUCTURE = [
     {
         "title": "Загальна структура",
@@ -37,7 +44,8 @@ STRUCTURE = [
         "items": [
             {"slug": "special-operations-forces", "mark": "ССО", "name": "Сили спеціальних операцій",
              "icon": "forces/sso_patch.png"},
-            {"slug": "territorial-defense-forces", "mark": "СТрО", "name": "Сили територіальної оборони"},
+            {"slug": "territorial-defense-forces", "mark": "СТрО", "name": "Сили територіальної оборони",
+             "icon": "forces/tro_patch.png"},
             {"slug": "logistics-forces", "mark": "СЛ", "name": "Сили логістики"},
             {"slug": "support-forces", "mark": "СП", "name": "Сили підтримки"},
             {"slug": "medical-forces", "mark": "МС", "name": "Медичні сили"},
@@ -155,10 +163,11 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     if command_ids:
         placeholders = ",".join("?" * len(command_ids))
         command_list = db.execute(
-            f"""SELECT command_id, command_name
-                FROM territorial_commands
-                WHERE command_id IN ({placeholders})
-                ORDER BY command_name COLLATE UKRAINIAN""",
+            f"""SELECT tc.command_id, tc.command_name, mbd.patch_file
+                FROM territorial_commands tc
+                LEFT JOIN military_branch_details mbd ON tc.details_id = mbd.details_id
+                WHERE tc.command_id IN ({placeholders})
+                ORDER BY tc.command_name COLLATE UKRAINIAN""",
             tuple(command_ids),
         ).fetchall()
 
