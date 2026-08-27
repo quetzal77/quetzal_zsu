@@ -28,9 +28,6 @@
       {% endif %}
     </nav>
     <div class="topbar__right">
-      <form class="search" method="get" action="/brigades" data-live-search>
-        <input id="search-desktop" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
-      </form>
       {% if request.session.get('username') %}
         <span class="mono" style="color:var(--muted);font-size:12.5px">{{ request.session.get('username') }}</span>
         <form method="post" action="/logout" style="display:inline"><button type="submit" class="btn-ghost">Вийти</button></form>
@@ -50,11 +47,6 @@
     {% if request.session.get('username') %}
       <a href="/stats">Статистика</a>
       <a href="/settings">Налаштування</a>
-    {% endif %}
-    <form class="search" method="get" action="/brigades" data-live-search>
-      <input id="search-mobile" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
-    </form>
-    {% if request.session.get('username') %}
       <form method="post" action="/logout"><button type="submit" class="btn-ghost">Вийти ({{ request.session.get('username') }})</button></form>
     {% else %}
       <a href="/login">Увійти</a>

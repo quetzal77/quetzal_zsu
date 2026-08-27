@@ -5,12 +5,14 @@
 {% set has_filters = filters.military_branch_id or filters.corps_id or filters.territorial_command_id or filters.troop_type_id or filters.unit_type_id or filters.region_id %}
 
 <form method="get" action="/brigades" id="filterform">
-  <input type="hidden" name="q" value="{{ request.query_params.get('q','') }}">
   <input type="hidden" name="panel_open" id="panel_open_input" value="{{ '1' if panel_open else '0' }}">
 
   <div class="page-eyebrow">Реєстр з'єднань</div>
 
   <div class="toolbar">
+    <div class="search search--inline">
+      <input id="search-desktop" name="q" value="{{ request.query_params.get('q','') }}" placeholder="Пошук за назвою / №…" autocomplete="off">
+    </div>
     <button type="button" class="filters-toggle {{ 'is-on' if has_filters }}"
             onclick="var f=document.getElementById('filters'); f.classList.toggle('is-hidden'); document.getElementById('panel_open_input').value = f.classList.contains('is-hidden') ? '0' : '1';">
       Фільтри{% if has_filters %} · активні{% endif %} ▾
@@ -22,8 +24,6 @@
     {% if request.session.get('username') %}
     <a class="btn-primary" href="/brigades/new">＋ Додати з'єднання</a>
     {% endif %}
-
-
   </div>
 
   <div class="filters {{ 'is-hidden' if not panel_open }}" id="filters">
@@ -243,7 +243,7 @@
     var visibleCount = 0;
 
     rows.forEach(function (row) {
-      var words = row.dataset.name.split(/[\s-]+/);
+      var words = row.dataset.name.split(/[^\p{L}\p{N}]+/u);
       var match = q === '' || words.some(function (w) { return w.startsWith(q); });
       row.style.display = match ? '' : 'none';
       if (match) visibleCount += 1;
@@ -278,8 +278,10 @@
     });
   });
 
-  document.querySelectorAll('form[data-live-search]').forEach(function (form) {
-    form.addEventListener('submit', function (e) { e.preventDefault(); });
+  inputs.forEach(function (input) {
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') e.preventDefault();
+    });
   });
 
   applyFilter(inputs[0].value);

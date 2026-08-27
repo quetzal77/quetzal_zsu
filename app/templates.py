@@ -30,6 +30,22 @@ def format_date_uk(value) -> str:
 
 templates.env.filters["uk_date"] = format_date_uk
 
+
+def uk_brigade_word(count: int) -> str:
+    """Відмінює "з'єднання" за кількістю: 1 з'єднання, 2-4 з'єднання, 5-20/11-14 з'єднань."""
+    n = abs(int(count)) % 100
+    last = n % 10
+    if n in (11, 12, 13, 14):
+        return "з'єднань"
+    if last == 1:
+        return "з'єднання"
+    if last in (2, 3, 4):
+        return "з'єднання"
+    return "з'єднань"
+
+
+templates.env.filters["uk_brigade_word"] = uk_brigade_word
+
 # Cache-busting: browsers otherwise keep serving a stale style.css after edits
 # since Starlette's StaticFiles doesn't force revalidation by default.
 # Computed fresh on every call (not once at import) — uvicorn --reload only

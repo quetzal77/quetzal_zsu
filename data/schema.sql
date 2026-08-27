@@ -50,6 +50,7 @@ CREATE TABLE territorial_commands (
     command_name         TEXT NOT NULL UNIQUE,
     military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому підпорядковане ОК
     details_id           INTEGER REFERENCES military_branch_details (details_id),
+    is_force              INTEGER NOT NULL DEFAULT 0, -- позначка "сила" (напр. Сили ТрО) на відміну від звичайного ОК
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

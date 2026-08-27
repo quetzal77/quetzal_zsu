@@ -3,18 +3,21 @@
 {% block content %}
 <div class="page-eyebrow">Спорядження та Зброя</div>
 
-{% if request.session.get('username') %}
-<div class="toolbar" style="justify-content:flex-end;margin-bottom:20px">
+<div class="toolbar">
+  <div class="search search--inline">
+    <input id="equipment-search" placeholder="Пошук за назвою спорядження…" autocomplete="off">
+  </div>
+  {% if request.session.get('username') %}
   <a class="btn-primary" href="/equipment/new">＋ Додати спорядження</a>
+  {% endif %}
 </div>
-{% endif %}
 
-<div class="grid-cards">
+<div class="grid-cards" id="equipment-cards">
   {% for e in equipment %}
     {% if loop.first or e.type_name != equipment[loop.index0 - 1].type_name %}
       <div class="divider"><span>{{ e.type_name or 'Без типу' }}</span></div>
     {% endif %}
-    <a class="card equipment-card" href="/equipment/{{ e.equipment_id }}">
+    <a class="card equipment-card equipment-row" data-name="{{ e.name|lower }}" href="/equipment/{{ e.equipment_id }}">
       <div class="card__head">
         <span class="card__title">
           <span class="card__name">{{ e.name }}</span>
@@ -27,4 +30,50 @@
     <div class="empty" style="grid-column:1/-1">Позиції ще не додані.</div>
   {% endfor %}
 </div>
+<div class="empty" id="equipment-search-empty" style="display:none">Нічого не знайдено за цим запитом.</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var input = document.getElementById('equipment-search');
+  var rows = document.querySelectorAll('.equipment-row');
+  var dividers = document.querySelectorAll('#equipment-cards > .divider');
+  var emptyMsg = document.getElementById('equipment-search-empty');
+  if (!input || !rows.length) return;
+
+  function normalize(s) {
+    return (s || '').trim().toLocaleLowerCase('uk');
+  }
+
+  function applyFilter(query) {
+    var q = normalize(query);
+    var visibleCount = 0;
+
+    rows.forEach(function (row) {
+      var words = row.dataset.name.split(/[^\p{L}\p{N}]+/u);
+      var match = q === '' || words.some(function (w) { return w.startsWith(q); });
+      row.style.display = match ? '' : 'none';
+      if (match) visibleCount += 1;
+    });
+
+    dividers.forEach(function (divider) {
+      var sibling = divider.nextElementSibling;
+      var hasVisible = false;
+      while (sibling && !sibling.classList.contains('divider')) {
+        if (sibling.classList.contains('equipment-row') && sibling.style.display !== 'none') {
+          hasVisible = true;
+          break;
+        }
+        sibling = sibling.nextElementSibling;
+      }
+      divider.style.display = hasVisible ? '' : 'none';
+    });
+
+    if (emptyMsg) emptyMsg.style.display = visibleCount === 0 ? '' : 'none';
+  }
+
+  input.addEventListener('input', function (e) { applyFilter(e.target.value); });
+})();
+</script>
 {% endblock %}

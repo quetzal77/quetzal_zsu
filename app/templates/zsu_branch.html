@@ -63,7 +63,7 @@
     <div class="page-eyebrow" style="margin-bottom:8px">Оперативні командування</div>
     <div class="corps-filter" id="command-filter">
       {% for c in command_list %}
-      <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}">
+      <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}" title="{{ c.command_name }}">
         <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
           {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
         </span>
@@ -76,7 +76,7 @@
     <div class="page-eyebrow" style="margin-bottom:8px">Армійські корпуси</div>
     <div class="corps-filter" id="corps-filter">
       {% for c in corps_list %}
-      <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}">
+      <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}" title="{{ c.corps_name }}">
         <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
           {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
         </span>

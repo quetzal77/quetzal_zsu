@@ -63,8 +63,10 @@ _LOOKUP_TABLES = {
         "extra_cols": [
             {"col": "military_branch_id", "label": "Рід військ", "type": "branch"},
             {"col": "details_id", "label": "Деталі", "type": "branch-details"},
+            {"col": "is_force", "label": "Сила", "type": "checkbox"},
         ],
-        "wide": True,  # рівно 4 елементи (назва + 2 поля + дії) — влазить в один рядок гріда
+        "wide": True,  # 5 елементів (назва + 3 поля + дії) — потребує ширшого гріда, ніж стандартні 4 колонки
+        "grid_cols": 5,
         "dependents": [
             {"table": "brigades", "fk_col": "territorial_command_id", "name_col": "name", "label": "бригад"},
         ],
@@ -210,6 +212,7 @@ def _settings_context(db: sqlite3.Connection) -> dict:
             "rows": _lookup_rows(db, slug),
             "extra_cols": config.get("extra_cols", []),
             "wide": config.get("wide", False),
+            "grid_cols": config.get("grid_cols", 4),
         }
         for slug, config in _LOOKUP_TABLES.items()
     ]
@@ -373,12 +376,18 @@ _FK_EXTRA_COL_TYPES = {"location", "branch", "branch-details"}
 def _extra_col_values(config: dict, form_values: dict) -> list:
     """Convert raw form strings to DB-ready values per column type: "location"/
     "branch"/"branch-details" columns are FK ints (like brigades' Optional[str] ->
-    Optional[int] fields), everything else (text/date, both stored as plain TEXT)
-    passes through as-is."""
+    Optional[int] fields), "checkbox" columns are 0/1 (unchecked boxes are simply
+    absent from the submitted form, so raw is None), everything else (text/date,
+    both stored as plain TEXT) passes through as-is."""
     values = []
     for ec in config.get("extra_cols", []):
         raw = form_values.get(ec["col"])
-        values.append(_optional_int(raw) if ec.get("type") in _FK_EXTRA_COL_TYPES else (raw or None))
+        if ec.get("type") in _FK_EXTRA_COL_TYPES:
+            values.append(_optional_int(raw))
+        elif ec.get("type") == "checkbox":
+            values.append(1 if raw else 0)
+        else:
+            values.append(raw or None)
     return values
 
 
@@ -395,6 +404,7 @@ def create_lookup_item(
     collar_emblem_file: Optional[str] = Form(None),
     military_branch_id: Optional[str] = Form(None),
     details_id: Optional[str] = Form(None),
+    is_force: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -406,6 +416,7 @@ def create_lookup_item(
         "collar_emblem_file": collar_emblem_file,
         "military_branch_id": military_branch_id,
         "details_id": details_id,
+        "is_force": is_force,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)
@@ -435,6 +446,7 @@ def update_lookup_item(
     collar_emblem_file: Optional[str] = Form(None),
     military_branch_id: Optional[str] = Form(None),
     details_id: Optional[str] = Form(None),
+    is_force: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -446,6 +458,7 @@ def update_lookup_item(
         "collar_emblem_file": collar_emblem_file,
         "military_branch_id": military_branch_id,
         "details_id": details_id,
+        "is_force": is_force,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)

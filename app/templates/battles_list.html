@@ -3,17 +3,20 @@
 {% block content %}
 <div class="page-eyebrow">Хронологія битв</div>
 
-{% if request.session.get('username') %}
-<div class="toolbar" style="justify-content:flex-end;margin-bottom:20px">
+<div class="toolbar">
+  <div class="search search--inline">
+    <input id="battle-search" placeholder="Пошук за назвою битви…" autocomplete="off">
+  </div>
+  {% if request.session.get('username') %}
   <a class="btn-primary" href="/battles/new">＋ Додати битву</a>
+  {% endif %}
 </div>
-{% endif %}
 
 {% if battles %}
-<div class="timeline">
+<div class="timeline" id="battles-timeline">
   <div class="timeline__track">
     {% for b in battles %}
-      <a class="timeline__node {{ 'is-active' if b.status == 'триває' }}" href="/battles/{{ b.battle_id }}">
+      <a class="timeline__node battle-row {{ 'is-active' if b.status == 'триває' }}" data-name="{{ b.name|lower }}" href="/battles/{{ b.battle_id }}">
         <div class="line">
           <span class="diamond"></span>
           <span class="bar"></span>
@@ -26,12 +29,12 @@
 </div>
 {% endif %}
 
-<div class="grid-cards">
+<div class="grid-cards" id="battles-cards">
   {% for b in battles %}
     {% if loop.first or b.year != battles[loop.index0 - 1].year %}
       <div class="divider"><span>{{ b.year or 'Без дати' }}</span></div>
     {% endif %}
-    <a class="card" href="/battles/{{ b.battle_id }}">
+    <a class="card battle-row" data-name="{{ b.name|lower }}" href="/battles/{{ b.battle_id }}">
       <div class="card__head">
         <span class="card__title">
           <span class="card__name">{{ b.name }}</span>
@@ -45,4 +48,50 @@
     <div class="empty" style="grid-column:1/-1">Битви ще не додані.</div>
   {% endfor %}
 </div>
+<div class="empty" id="battle-search-empty" style="display:none">Нічого не знайдено за цим запитом.</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var input = document.getElementById('battle-search');
+  var rows = document.querySelectorAll('.battle-row');
+  var dividers = document.querySelectorAll('#battles-cards > .divider');
+  var emptyMsg = document.getElementById('battle-search-empty');
+  if (!input || !rows.length) return;
+
+  function normalize(s) {
+    return (s || '').trim().toLocaleLowerCase('uk');
+  }
+
+  function applyFilter(query) {
+    var q = normalize(query);
+    var visibleCount = 0;
+
+    rows.forEach(function (row) {
+      var words = row.dataset.name.split(/[^\p{L}\p{N}]+/u);
+      var match = q === '' || words.some(function (w) { return w.startsWith(q); });
+      row.style.display = match ? '' : 'none';
+      if (match) visibleCount += 1;
+    });
+
+    dividers.forEach(function (divider) {
+      var sibling = divider.nextElementSibling;
+      var hasVisible = false;
+      while (sibling && !sibling.classList.contains('divider')) {
+        if (sibling.classList.contains('battle-row') && sibling.style.display !== 'none') {
+          hasVisible = true;
+          break;
+        }
+        sibling = sibling.nextElementSibling;
+      }
+      divider.style.display = hasVisible ? '' : 'none';
+    });
+
+    if (emptyMsg) emptyMsg.style.display = visibleCount === 0 ? '' : 'none';
+  }
+
+  input.addEventListener('input', function (e) { applyFilter(e.target.value); });
+})();
+</script>
 {% endblock %}

@@ -35,6 +35,11 @@
   {% elif ec.type == 'date' %}
     <input name="{{ ec.col }}"{{ form_attr|safe }} class="mono" value="{{ value or '' }}" placeholder="{{ ec.label }} (РРРР-ММ-ДД)"
            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+  {% elif ec.type == 'checkbox' %}
+    <label style="{{ sizing }};display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+      <input type="checkbox" name="{{ ec.col }}" value="on"{{ form_attr|safe }} {{ 'checked' if value }}>
+      {{ ec.label }}
+    </label>
   {% else %}
     <input name="{{ ec.col }}"{{ form_attr|safe }} value="{{ value or '' }}" placeholder="{{ ec.label }} (файл/URL)"
            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
@@ -57,7 +62,7 @@
       <div style="max-height:{{ lu.list_max_height or ('320px' if lu.wide else '230px') }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for item in lu.rows %}
           {% if lu.wide %}
-          <div class="lookup-grid-row">
+          <div class="lookup-grid-row" style="grid-template-columns:repeat({{ lu.grid_cols }},1fr)">
             <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
                    value="{{ item.name }}" class="lookup-grid-row__name"
                    style="font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
@@ -95,7 +100,8 @@
       </div>
 
       {% if lu.wide %}
-      <form method="post" action="/settings/lookups/{{ lu.slug }}" id="{{ lu.slug }}-create" class="lookup-grid-row" style="padding:0">
+      <form method="post" action="/settings/lookups/{{ lu.slug }}" id="{{ lu.slug }}-create" class="lookup-grid-row"
+            style="padding:0;grid-template-columns:repeat({{ lu.grid_cols }},1fr)">
         <input name="name" form="{{ lu.slug }}-create" required placeholder="Нова назва" class="lookup-grid-row__name"
                style="font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
         {% for ec in lu.extra_cols %}
