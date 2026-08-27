@@ -39,8 +39,7 @@ CREATE TABLE military_branch_details (
 CREATE TABLE military_branches (
     branch_id          INTEGER PRIMARY KEY,
     branch_name        TEXT NOT NULL UNIQUE,
-    details_id         INTEGER REFERENCES military_branch_details (details_id)
-                               ,
+    details_id         INTEGER REFERENCES military_branch_details (details_id),
     created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -50,7 +49,7 @@ CREATE TABLE territorial_commands (
     command_name         TEXT NOT NULL UNIQUE,
     military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому підпорядковане ОК
     details_id           INTEGER REFERENCES military_branch_details (details_id),
-    is_force              INTEGER NOT NULL DEFAULT 0, -- позначка "сила" (напр. Сили ТрО) на відміну від звичайного ОК
+    is_force             INTEGER NOT NULL DEFAULT 0, -- позначка "сила" (напр. Сили ТрО) на відміну від звичайного ОК
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
