@@ -255,7 +255,8 @@ def create_brigade(
 @router.get("/{brigade_id}")
 def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     brigade = db.execute(
-        """SELECT b.*, mb.branch_name, ac.corps_name, tc.command_name, tt.type_name,
+        """SELECT b.*, mb.branch_name, ac.corps_name, tc.command_name, tc.is_force AS command_is_force,
+                  tcmb.branch_name AS command_branch_name, tt.type_name,
                   l.city_name, r.region_name, ut.type_name AS unit_type_name,
                   (
                       SELECT bt.unit_name
@@ -268,6 +269,7 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
            LEFT JOIN military_branches mb ON b.military_branch_id = mb.branch_id
            LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
            LEFT JOIN territorial_commands tc ON b.territorial_command_id = tc.command_id
+           LEFT JOIN military_branches tcmb ON tc.military_branch_id = tcmb.branch_id
            LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
            LEFT JOIN locations l ON b.location_id = l.location_id
            LEFT JOIN regions r ON l.region_id = r.region_id
@@ -314,6 +316,15 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
 
     branch_zsu_slug = _ACTIVE_ZSU_SLUG_BY_BRANCH_NAME.get(brigade["branch_name"]) if brigade else None
 
+    # Тер. командування лінкується на свій саб-бранч /zsu/{slug}/{command_id}
+    # лише якщо воно позначене як "сила" (is_force) і належить роду військ,
+    # для якого вже є робоча сторінка /zsu (так само, як і "Рід військ" вище).
+    command_zsu_slug = None
+    if brigade and brigade["command_is_force"]:
+        parent_slug = _ACTIVE_ZSU_SLUG_BY_BRANCH_NAME.get(brigade["command_branch_name"])
+        if parent_slug:
+            command_zsu_slug = f"{parent_slug}/{brigade['territorial_command_id']}"
+
     return templates.TemplateResponse(
         request,
         "brigade_detail.html",
@@ -324,6 +335,7 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
             "photos": photos,
             "traditions": traditions,
             "branch_zsu_slug": branch_zsu_slug,
+            "command_zsu_slug": command_zsu_slug,
         },
     )
 

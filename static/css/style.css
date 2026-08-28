@@ -175,6 +175,10 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .corps-filter__emblem { flex: none; width: 44px; height: 53px; display: grid; place-items: center; overflow: hidden; }
 .corps-filter__emblem img { width: 100%; height: 100%; object-fit: contain; }
 .corps-filter__name { font-weight: 600; font-size: 12px; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.corps-filter__item-wrap { position: relative; flex: 0 0 130px; }
+.corps-filter__item-wrap .corps-filter__item { width: 100%; }
+.corps-filter__goto { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; font-size: 13px; line-height: 1; text-decoration: none; }
+.corps-filter__goto:hover { filter: brightness(1.1); }
 
 /* ---------- Equipment card ---------- */
 .equipment-card__desc { color: var(--muted); font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; }

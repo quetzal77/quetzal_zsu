@@ -33,7 +33,7 @@
       <dl class="spec">
         <div class="row"><dt>Рід військ</dt><dd>{% if branch_zsu_slug %}<a class="spec-link" href="/zsu/{{ branch_zsu_slug }}">{{ brigade.branch_name }}</a>{% else %}{{ brigade.branch_name or '—' }}{% endif %}</dd></div>
         <div class="row"><dt>Корпус</dt><dd>{{ brigade.corps_name or '—' }}</dd></div>
-        <div class="row"><dt>Тер. командування</dt><dd>{{ brigade.command_name or '—' }}</dd></div>
+        <div class="row"><dt>Тер. командування</dt><dd>{% if command_zsu_slug %}<a class="spec-link" href="/zsu/{{ command_zsu_slug }}">{{ brigade.command_name }}</a>{% else %}{{ brigade.command_name or '—' }}{% endif %}</dd></div>
         <div class="row"><dt>Тип військ</dt><dd>{{ brigade.type_name or '—' }}</dd></div>
         <div class="row"><dt>Тип з'єднання</dt><dd>{{ brigade.unit_type_name or '—' }}</dd></div>
         <div class="row"><dt>ППД</dt><dd>{{ brigade.city_name or '—' }}{% if brigade.region_name %}, {{ brigade.region_name }}{% endif %}</dd></div>

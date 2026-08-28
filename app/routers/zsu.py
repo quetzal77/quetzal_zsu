@@ -10,15 +10,17 @@ router = APIRouter(tags=["zsu"])
 # Статична структура ЗСУ для сторінки-довідника. Плашки поки не клікабельні —
 # data-slug лишається заготовкою під майбутній роутинг (напр. /zsu/{slug}).
 # Функціональність готова лише для "Сили безпілотних систем", "Сили спеціальних
-# операцій", "Десантно-штурмові війська", "Військово-морські сили" і "Сили
+# операцій", "Десантно-штурмові війська", "Військово-морські сили", "Сили
 # територіальної оборони" (з'єднання ТрО ще не додані — сторінка показує порожній
-# список) — решта плашок заморожені (disabled) до появи відповідних сторінок.
+# список) і "Генеральний штаб" (з'єднань немає за визначенням — сторінка показує
+# порожній список) — решта плашок заморожені (disabled) до появи відповідних сторінок.
 ACTIVE_SLUGS = {
     "unmanned-systems-forces",
     "special-operations-forces",
     "air-assault-troops",
     "navy",
     "territorial-defense-forces",
+    "general-staff",
 }
 STRUCTURE = [
     {
@@ -112,6 +114,48 @@ def _find_item(slug: str) -> dict:
     raise HTTPException(status_code=404)
 
 
+_BRIGADES_QUERY = """
+    SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
+           b.corps_id, b.territorial_command_id,
+           tt.type_name AS troop_type_name,
+           tt.collar_emblem_file AS troop_type_collar_file,
+           (
+               SELECT bt.unit_name
+               FROM brigade_traditions bt
+               JOIN traditions t ON t.tradition_id = bt.tradition_id
+               WHERE bt.brigade_id = b.brigade_id
+                 AND t.is_honorific = 1
+           ) AS honorific_name
+    FROM brigades b
+    LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
+    WHERE {where}
+    ORDER BY
+        CASE WHEN tt.type_name IS NULL THEN 2
+             WHEN tt.type_name = 'Командування' THEN 0
+             ELSE 1 END,
+        tt.type_name COLLATE UKRAINIAN,
+        CAST(b.name AS INTEGER), b.name
+"""
+
+
+def _brigades_where(db: sqlite3.Connection, where: str, param) -> list:
+    return db.execute(_BRIGADES_QUERY.format(where=where), (param,)).fetchall()
+
+
+def _corps_list_for(db: sqlite3.Connection, brigades) -> list:
+    corps_ids = {b["corps_id"] for b in brigades if b["corps_id"]}
+    if not corps_ids:
+        return []
+    placeholders = ",".join("?" * len(corps_ids))
+    return db.execute(
+        f"""SELECT corps_id, corps_name, emblem_file
+            FROM army_corps
+            WHERE corps_id IN ({placeholders})
+            ORDER BY corps_name COLLATE UKRAINIAN""",
+        tuple(corps_ids),
+    ).fetchall()
+
+
 @router.get("/zsu/{slug}")
 def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get_db)):
     # Активні лише слаги з ACTIVE_SLUGS — решта плашок на /zsu заморожені
@@ -134,36 +178,14 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
         (item["name"],),
     ).fetchone()
 
-    brigades = db.execute(
-        """SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
-                  b.corps_id, b.territorial_command_id,
-                  tt.type_name AS troop_type_name,
-                  tt.collar_emblem_file AS troop_type_collar_file,
-                  (
-                      SELECT bt.unit_name
-                      FROM brigade_traditions bt
-                      JOIN traditions t ON t.tradition_id = bt.tradition_id
-                      WHERE bt.brigade_id = b.brigade_id
-                        AND t.is_honorific = 1
-                  ) AS honorific_name
-           FROM brigades b
-           LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
-           WHERE b.military_branch_id = ?
-           ORDER BY
-               CASE WHEN tt.type_name IS NULL THEN 2
-                    WHEN tt.type_name = 'Командування' THEN 0
-                    ELSE 1 END,
-               tt.type_name COLLATE UKRAINIAN,
-               CAST(b.name AS INTEGER), b.name""",
-        (branch["branch_id"] if branch else -1,),
-    ).fetchall()
+    brigades = _brigades_where(db, "b.military_branch_id = ?", branch["branch_id"] if branch else -1)
 
     command_ids = {b["territorial_command_id"] for b in brigades if b["territorial_command_id"]}
     command_list = []
     if command_ids:
         placeholders = ",".join("?" * len(command_ids))
         command_list = db.execute(
-            f"""SELECT tc.command_id, tc.command_name, mbd.patch_file
+            f"""SELECT tc.command_id, tc.command_name, tc.is_force, mbd.patch_file
                 FROM territorial_commands tc
                 LEFT JOIN military_branch_details mbd ON tc.details_id = mbd.details_id
                 WHERE tc.command_id IN ({placeholders})
@@ -171,17 +193,7 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
             tuple(command_ids),
         ).fetchall()
 
-    corps_ids = {b["corps_id"] for b in brigades if b["corps_id"]}
-    corps_list = []
-    if corps_ids:
-        placeholders = ",".join("?" * len(corps_ids))
-        corps_list = db.execute(
-            f"""SELECT corps_id, corps_name, emblem_file
-                FROM army_corps
-                WHERE corps_id IN ({placeholders})
-                ORDER BY corps_name COLLATE UKRAINIAN""",
-            tuple(corps_ids),
-        ).fetchall()
+    corps_list = _corps_list_for(db, brigades)
 
     return templates.TemplateResponse(
         request,
@@ -192,5 +204,62 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
             "brigades": brigades,
             "command_list": command_list,
             "corps_list": corps_list,
+            "back_href": "/zsu",
+            "back_label": "Структура Збройних Сил України",
+        },
+    )
+
+
+@router.get("/zsu/{slug}/{command_id}")
+def zsu_branch_command(
+    slug: str, command_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)
+):
+    # Саб-бранч оперативного командування — доступний, лише якщо командування
+    # позначене як "сила" (is_force) і належить роду військ із ACTIVE_SLUGS.
+    # Сформований так само, як і звичайний бранч (zsu_branch.html), але
+    # з'єднання й корпуси фільтруються по territorial_command_id, а не по
+    # military_branch_id, і без свого списку вкладених командувань.
+    if slug not in ACTIVE_SLUGS:
+        raise HTTPException(status_code=404)
+    parent_item = _find_item(slug)
+
+    branch = db.execute(
+        "SELECT branch_id FROM military_branches WHERE branch_name = ?",
+        (parent_item["name"],),
+    ).fetchone()
+
+    command = db.execute(
+        """SELECT tc.command_id, tc.command_name, tc.is_force, mbd.*, l.city_name, r.region_name
+           FROM territorial_commands tc
+           LEFT JOIN military_branch_details mbd ON tc.details_id = mbd.details_id
+           LEFT JOIN locations l ON mbd.hq_location_id = l.location_id
+           LEFT JOIN regions r ON l.region_id = r.region_id
+           WHERE tc.command_id = ? AND tc.military_branch_id = ?""",
+        (command_id, branch["branch_id"] if branch else -1),
+    ).fetchone()
+    if not command or not command["is_force"]:
+        raise HTTPException(status_code=404)
+
+    brigades = _brigades_where(db, "b.territorial_command_id = ?", command_id)
+    corps_list = _corps_list_for(db, brigades)
+
+    item = {
+        "slug": f"{slug}/{command_id}",
+        "name": command["command_name"],
+        "mark": "".join(w[0] for w in command["command_name"].split()[:2]).upper(),
+        "hint": None,
+    }
+
+    return templates.TemplateResponse(
+        request,
+        "zsu_branch.html",
+        {
+            "item": item,
+            "branch": command,
+            "brigades": brigades,
+            "command_list": [],
+            "corps_list": corps_list,
+            "back_href": f"/zsu/{slug}",
+            "back_label": parent_item["name"],
         },
     )

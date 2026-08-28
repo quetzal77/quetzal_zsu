@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ item.name }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
-<a class="back-link" href="/zsu">← Структура Збройних Сил України</a>
+<a class="back-link" href="{{ back_href or '/zsu' }}">← {{ back_label or "Структура Збройних Сил України" }}</a>
 
 <div class="detail-head">
   <div class="detail-head__main">
@@ -63,12 +63,17 @@
     <div class="page-eyebrow" style="margin-bottom:8px">Оперативні командування</div>
     <div class="corps-filter" id="command-filter">
       {% for c in command_list %}
-      <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}" title="{{ c.command_name }}">
-        <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
-          {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
-        </span>
-        <span class="corps-filter__name">{{ c.command_name }}</span>
-      </button>
+      <div class="corps-filter__item-wrap">
+        <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}" title="{{ c.command_name }}">
+          <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
+            {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
+          </span>
+          <span class="corps-filter__name">{{ c.command_name }}</span>
+        </button>
+        {% if c.is_force %}
+        <a class="corps-filter__goto" href="/zsu/{{ item.slug }}/{{ c.command_id }}" title="Перейти до структури: {{ c.command_name }}" onclick="event.stopPropagation()">→</a>
+        {% endif %}
+      </div>
       {% endfor %}
     </div>
     {% endif %}
