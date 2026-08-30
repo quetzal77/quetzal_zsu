@@ -32,14 +32,14 @@ templates.env.filters["uk_date"] = format_date_uk
 
 
 def uk_brigade_word(count: int) -> str:
-    """Відмінює "з'єднання" за кількістю: 1 з'єднання, 2-4 з'єднання, 5-20/11-14 з'єднань."""
+    """Відмінює "з'єднання" за кількістю: 1 з'єднання, 2-4 з'єднання, 5-20/11-14 з'єднань.
+    Для іменників сер. роду на "-ння" форми 1 і 2-4 збігаються (значення/значення/значень),
+    тому обидві гілки повертають те саме слово — не помилка, просто правило так склалось."""
     n = abs(int(count)) % 100
     last = n % 10
     if n in (11, 12, 13, 14):
         return "з'єднань"
-    if last == 1:
-        return "з'єднання"
-    if last in (2, 3, 4):
+    if last in (1, 2, 3, 4):
         return "з'єднання"
     return "з'єднань"
 
@@ -55,7 +55,12 @@ _css_path = STATIC_DIR / "css" / "style.css"
 
 
 def _asset_version() -> str:
-    return str(int(_css_path.stat().st_mtime))
+    try:
+        return str(int(_css_path.stat().st_mtime))
+    except OSError:
+        # style.css відсутній (пошкоджений деплой/том) — не валимо рендер усієї
+        # сторінки через це, просто не бастимо кеш цього разу.
+        return "0"
 
 
 templates.env.globals["asset_version"] = _asset_version

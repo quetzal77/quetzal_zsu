@@ -8,6 +8,7 @@ from app.auth import require_login
 from app.database import get_db
 from app.sanitize import sanitize_html
 from app.templates import templates
+from app.validation import validate_date
 
 router = APIRouter(prefix="/battles", tags=["battles"])
 
@@ -116,6 +117,8 @@ def create_battle(
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    start_date = validate_date(start_date, "Дата початку")
+    end_date = validate_date(end_date, "Дата завершення")
     try:
         cur = db.execute(
             """INSERT INTO battles (name, description, location_id, start_date, end_date)
@@ -124,8 +127,8 @@ def create_battle(
                 name,
                 sanitize_html(description) or None,
                 _optional_int(location_id),
-                start_date or None,
-                end_date or None,
+                start_date,
+                end_date,
             ),
         )
         db.commit()
@@ -144,9 +147,10 @@ def battle_detail(battle_id: int, request: Request, db: sqlite3.Connection = Dep
            WHERE b.battle_id = ?""",
         (battle_id,),
     ).fetchone()
-    battle = dict(row) if row else None
-    if battle:
-        battle["status"] = _battle_status(battle["start_date"], battle["end_date"])
+    if not row:
+        raise HTTPException(status_code=404)
+    battle = dict(row)
+    battle["status"] = _battle_status(battle["start_date"], battle["end_date"])
 
     brigades = db.execute(
         """SELECT br.brigade_id, br.name, br.emblem_file
@@ -174,6 +178,8 @@ def edit_battle_form(
     battle = db.execute(
         "SELECT * FROM battles WHERE battle_id = ?", (battle_id,)
     ).fetchone()
+    if not battle:
+        raise HTTPException(status_code=404)
 
     brigades = db.execute(
         """SELECT br.brigade_id, br.name
@@ -210,8 +216,10 @@ def update_battle(
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    start_date = validate_date(start_date, "Дата початку")
+    end_date = validate_date(end_date, "Дата завершення")
     try:
-        db.execute(
+        cur = db.execute(
             """UPDATE battles SET
                    name = ?, description = ?, location_id = ?, start_date = ?, end_date = ?,
                    updated_at = CURRENT_TIMESTAMP
@@ -220,11 +228,13 @@ def update_battle(
                 name,
                 sanitize_html(description) or None,
                 _optional_int(location_id),
-                start_date or None,
-                end_date or None,
+                start_date,
+                end_date,
                 battle_id,
             ),
         )
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404)
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -238,7 +248,9 @@ def delete_battle(
     _user: str = Depends(require_login),
 ):
     db.execute("DELETE FROM brigade_battles WHERE battle_id = ?", (battle_id,))
-    db.execute("DELETE FROM battles WHERE battle_id = ?", (battle_id,))
+    cur = db.execute("DELETE FROM battles WHERE battle_id = ?", (battle_id,))
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404)
     db.commit()
     return RedirectResponse(url="/battles", status_code=303)
 

@@ -6,7 +6,9 @@ from fastapi.responses import RedirectResponse
 
 from app.auth import require_login
 from app.database import get_db
+from app.sanitize import sanitize_html
 from app.templates import templates
+from app.validation import validate_date
 
 router = APIRouter(prefix="/traditions", tags=["traditions"])
 
@@ -48,13 +50,14 @@ def create_tradition(
     title: str = Form(...),
     description: Optional[str] = Form(None),
     photo: str | None = Form(None),
+    is_honorific: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
     try:
         cur = db.execute(
-            "INSERT INTO traditions (title, description, photo) VALUES (?, ?, ?)",
-            (title, description or None, photo or None),
+            "INSERT INTO traditions (title, description, photo, is_honorific) VALUES (?, ?, ?, ?)",
+            (title, sanitize_html(description) or None, photo or None, 1 if is_honorific else 0),
         )
         db.commit()
     except sqlite3.IntegrityError as e:
@@ -67,6 +70,8 @@ def tradition_detail(tradition_id: int, request: Request, db: sqlite3.Connection
     tradition = db.execute(
         "SELECT * FROM traditions WHERE tradition_id = ?", (tradition_id,)
     ).fetchone()
+    if not tradition:
+        raise HTTPException(status_code=404)
 
     brigades = db.execute(
         """SELECT b.brigade_id, b.name, mb.branch_name, ac.corps_name,
@@ -97,6 +102,8 @@ def edit_tradition_form(
     tradition = db.execute(
         "SELECT * FROM traditions WHERE tradition_id = ?", (tradition_id,)
     ).fetchone()
+    if not tradition:
+        raise HTTPException(status_code=404)
 
     brigades = db.execute(
         """SELECT b.brigade_id, b.name, bt.date_assigned, bt.unit_name, bt.photo
@@ -128,19 +135,23 @@ def update_tradition(
     title: str = Form(...),
     description: Optional[str] = Form(None),
     photo: str | None = Form(None),
+    is_honorific: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
     try:
-        db.execute(
-            """UPDATE traditions SET title = ?, description = ?, photo = ?, updated_at = CURRENT_TIMESTAMP
+        cur = db.execute(
+            """UPDATE traditions SET title = ?, description = ?, photo = ?, is_honorific = ?,
+                   updated_at = CURRENT_TIMESTAMP
                WHERE tradition_id = ?""",
-            (title, description or None, photo or None, tradition_id),
+            (title, sanitize_html(description) or None, photo or None, 1 if is_honorific else 0, tradition_id),
         )
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404)
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RedirectResponse(url="/traditions", status_code=303)
+    return RedirectResponse(url=f"/traditions/{tradition_id}/edit", status_code=303)
 
 
 @router.post("/{tradition_id}/delete")
@@ -150,7 +161,9 @@ def delete_tradition(
     _user: str = Depends(require_login),
 ):
     db.execute("DELETE FROM brigade_traditions WHERE tradition_id = ?", (tradition_id,))
-    db.execute("DELETE FROM traditions WHERE tradition_id = ?", (tradition_id,))
+    cur = db.execute("DELETE FROM traditions WHERE tradition_id = ?", (tradition_id,))
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404)
     db.commit()
     return RedirectResponse(url="/traditions", status_code=303)
 
@@ -170,6 +183,10 @@ def add_brigade_to_tradition(
         "SELECT * FROM traditions WHERE tradition_id = ?",
         (tradition_id,)
     ).fetchone()
+    if not tradition:
+        raise HTTPException(status_code=404)
+
+    date_assigned = validate_date(date_assigned, "Дата призначення")
 
     # 2. Перевіряємо флаг is_honorific
     is_honorific = tradition["is_honorific"] == 1

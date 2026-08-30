@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from app.auth import require_login
 from app.database import get_db
 from app.templates import templates
+from app.validation import validate_date
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -377,8 +378,9 @@ def _extra_col_values(config: dict, form_values: dict) -> list:
     """Convert raw form strings to DB-ready values per column type: "location"/
     "branch"/"branch-details" columns are FK ints (like brigades' Optional[str] ->
     Optional[int] fields), "checkbox" columns are 0/1 (unchecked boxes are simply
-    absent from the submitted form, so raw is None), everything else (text/date,
-    both stored as plain TEXT) passes through as-is."""
+    absent from the submitted form, so raw is None), "date" columns are validated
+    against РРРР-ММ-ДД (400 on a malformed value), everything else (plain text)
+    passes through as-is."""
     values = []
     for ec in config.get("extra_cols", []):
         raw = form_values.get(ec["col"])
@@ -386,6 +388,8 @@ def _extra_col_values(config: dict, form_values: dict) -> list:
             values.append(_optional_int(raw))
         elif ec.get("type") == "checkbox":
             values.append(1 if raw else 0)
+        elif ec.get("type") == "date":
+            values.append(validate_date(raw, ec["label"]))
         else:
             values.append(raw or None)
     return values

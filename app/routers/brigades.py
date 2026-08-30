@@ -9,6 +9,7 @@ from app.database import get_db
 from app.routers.zsu import ACTIVE_SLUGS, STRUCTURE
 from app.sanitize import sanitize_html
 from app.templates import templates
+from app.validation import validate_date
 
 router = APIRouter(prefix="/brigades", tags=["brigades"])
 
@@ -159,9 +160,12 @@ def list_brigades(
         params.append(region_id)
     if q:
         # ловимо збіг як на початку назви, так і на початку будь-якого
-        # окремого слова всередині неї (розділювачі — пробіл або дефіс)
-        query += " AND (b.name LIKE ? OR b.name LIKE ? OR b.name LIKE ?)"
-        params.extend([f"{q}%", f"% {q}%", f"%-{q}%"])
+        # окремого слова всередині неї (розділювачі — пробіл або дефіс).
+        # Екрануємо LIKE-спецсимволи (%, _) у введенні користувача, інакше
+        # "50%" чи "1_2" трактуються як вайлдкарди, а не буквальний текст.
+        q_escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        query += " AND (b.name LIKE ? ESCAPE '\\' OR b.name LIKE ? ESCAPE '\\' OR b.name LIKE ? ESCAPE '\\')"
+        params.extend([f"{q_escaped}%", f"% {q_escaped}%", f"%-{q_escaped}%"])
     # Спочатку за родом військ (алфавітно, без роду військ — в кінець),
     # а всередині роду військ — за номером з'єднання: CAST бере лише провідний номер
     # ("142-га ..." -> 142), тому сортування виходить числове (15 перед 142), а не
@@ -225,6 +229,9 @@ def create_brigade(
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    formed_date = validate_date(formed_date, "Дата заснування")
+    flag_date = validate_date(flag_date, "Дата вручення прапора")
+    brigade_date = validate_date(brigade_date, "Дата присвоєння статусу бригади")
     try:
         cur = db.execute(
             """INSERT INTO brigades
@@ -240,9 +247,9 @@ def create_brigade(
                 _optional_int(territorial_command_id),
                 _optional_int(troop_type_id),
                 _optional_int(location_id),
-                formed_date or None,
-                flag_date or None,
-                brigade_date or None,
+                formed_date,
+                flag_date,
+                brigade_date,
                 _optional_int(unit_type_id),
             ),
         )
@@ -277,6 +284,8 @@ def brigade_detail(brigade_id: int, request: Request, db: sqlite3.Connection = D
            WHERE b.brigade_id = ?""",
         (brigade_id,),
     ).fetchone()
+    if not brigade:
+        raise HTTPException(status_code=404)
 
     battles = db.execute(
         """SELECT bt.battle_id, bt.name
@@ -361,8 +370,11 @@ def update_brigade(
         db: sqlite3.Connection = Depends(get_db),
         _user: str = Depends(require_login),
 ):
+    formed_date = validate_date(formed_date, "Дата заснування")
+    flag_date = validate_date(flag_date, "Дата вручення прапора")
+    brigade_date = validate_date(brigade_date, "Дата присвоєння статусу бригади")
     try:
-        db.execute(
+        cur = db.execute(
             """UPDATE brigades SET
                    name = ?, description = ?, emblem_file = ?, military_branch_id = ?, corps_id = ?,
                    territorial_command_id = ?, troop_type_id = ?, location_id = ?,
@@ -377,13 +389,15 @@ def update_brigade(
                 _optional_int(territorial_command_id),
                 _optional_int(troop_type_id),
                 _optional_int(location_id),
-                formed_date or None,
-                flag_date or None,
-                brigade_date or None,
+                formed_date,
+                flag_date,
+                brigade_date,
                 _optional_int(unit_type_id),
                 brigade_id,
             ),
         )
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404)
 
         photos = [photo_0, photo_1, photo_2]
 
@@ -438,7 +452,9 @@ def delete_brigade(
     db.execute("DELETE FROM brigade_equipment WHERE brigade_id = ?", (brigade_id,))
     db.execute("DELETE FROM brigade_traditions WHERE brigade_id = ?", (brigade_id,))
     db.execute("DELETE FROM brigade_photos WHERE brigade_id = ?", (brigade_id,))
-    db.execute("DELETE FROM brigades WHERE brigade_id = ?", (brigade_id,))
+    cur = db.execute("DELETE FROM brigades WHERE brigade_id = ?", (brigade_id,))
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404)
     db.commit()
     return RedirectResponse(url="/brigades", status_code=303)
 
@@ -454,6 +470,8 @@ def edit_brigade_form(
         "SELECT * FROM brigades WHERE brigade_id = ?",
         (brigade_id,),
     ).fetchone()
+    if not brigade:
+        raise HTTPException(status_code=404)
 
     raw_photos = db.execute(
         """SELECT photo_id, brigade_id, file_path, position

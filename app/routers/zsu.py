@@ -27,7 +27,8 @@ STRUCTURE = [
         "title": "Загальна структура",
         "items": [
             {"slug": "general-staff", "mark": "ГШ", "name": "Генеральний штаб Збройних Сил України",
-             "hint": "Орган стратегічного управління"},
+             "hint": "Орган стратегічного управління",
+             "icon": "forces/General_Staff_of_the_Ukrainian_Armed_Forces_Patch.png"},
             {"slug": "joint-forces-command", "mark": "КОС", "name": "Командування об’єднаних сил ЗС України",
              "hint": "Оперативне командування"},
         ],

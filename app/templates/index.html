@@ -116,9 +116,6 @@
             </span></td>
             <td class="cell-name">
                 <b>{{ b.name }}</b>
-                {% if b.callsign %}
-                <small>{{ b.callsign }}</small>
-                {% endif %}
 
                 {% if b.honorific_name %}
                 <div class="honorific-inline">
@@ -160,7 +157,6 @@
           <span class="card__title">
             <span class="card__name">{{ b.name }}</span>
             {% if b.honorific_name %}<span class="card__honorific">{{ b.honorific_name }}</span>{% endif %}
-            {% if b.callsign %}<span class="card__sub">{{ b.callsign }}</span>{% endif %}
           </span>
         </div>
         <div class="tags">
@@ -197,7 +193,7 @@
 {% block scripts %}
 <script>
 (function () {
-  var inputs = [document.getElementById('search-desktop'), document.getElementById('search-mobile')].filter(Boolean);
+  var inputs = [document.getElementById('search-desktop')].filter(Boolean);
   var rows = document.querySelectorAll('.brigade-row');
   var dividers = document.querySelectorAll('#brigades-cards > .divider');
   var groupRows = document.querySelectorAll('#brigades-table .table-group');
