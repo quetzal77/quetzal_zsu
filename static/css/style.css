@@ -298,6 +298,9 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 a.timeline__node { display: block; color: inherit; cursor: pointer; }
 a.timeline__node:hover .diamond { border-color: var(--green); }
 a.timeline__node:hover .name { color: var(--ink); }
+.timeline__node.stat-num { display: block; cursor: pointer; border-bottom: none; }
+.timeline__node.stat-num:hover .diamond, .timeline__node.stat-num:focus .diamond { border-color: var(--green); }
+.timeline__node.stat-num:hover .name, .timeline__node.stat-num:focus .name { color: var(--ink); }
 
 .status { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; padding: 4px 10px; border-radius: 2px; }
 .status--win { color: #03815B; background: #E6F4EE; }
@@ -332,6 +335,35 @@ a.timeline__node:hover .name { color: var(--ink); }
 .bar-row .bar-head b { font-family: var(--mono); color: var(--ink); font-weight: 700; font-size: 13.5px; }
 .bar-track { background: var(--line-2); border-radius: 2px; overflow: hidden; }
 .bar-fill { display: block; height: 8px; border-radius: 2px; background: var(--green); }
+
+.stats-branch-table th, .stats-branch-table td { text-align: center; }
+.stats-branch-table th:first-child, .stats-branch-table td.cell-name { text-align: left; }
+.stats-branch-table td.num-mono { text-align: center; }
+.stat-num { position: relative; display: inline-block; cursor: default; border-bottom: 1px dotted var(--faint); }
+.stat-num__tip {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 4px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-family: var(--sans, inherit);
+}
+.stat-num__tip b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #C8D0DC; margin-bottom: 6px; font-weight: 700; }
+.stat-num__tip ul { list-style: none; margin: 0; padding: 0; }
+.stat-num__tip li { font-size: 13px; line-height: 1.5; font-weight: 400; color: #fff; }
+.stat-num__tip.is-open { visibility: visible; opacity: 1; pointer-events: auto; }
 
 /* ---------- Footer ---------- */
 footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: #B7BEC9; font-size: 11px; }
