@@ -5,7 +5,7 @@
      опційно з додатковими колонками (текст/дата/локація). mode="grid" —
      поле займає всю комірку фіксованого гріда (wide-панелі, багато полів);
      mode="flex" — гнучка ширина в звичайному flex-рядку (1-2 додаткових поля). ── #}
-{% macro extra_field(ec, form_id, value, locations, branches=[], branch_details=[], mode='grid') %}
+{% macro extra_field(ec, form_id, value, locations, branches=[], branch_details=[], commands=[], mode='grid') %}
   {% set sizing = 'width:100%;box-sizing:border-box' if mode == 'grid' else 'flex:1 1 140px;min-width:0' %}
   {% set form_attr = (' form="' ~ form_id ~ '"') if form_id else '' %}
   {% if ec.type == 'location' %}
@@ -32,6 +32,14 @@
         <option value="{{ d.details_id }}" {{ 'selected' if value == d.details_id }}>{{ d.details_name }}</option>
       {% endfor %}
     </select>
+  {% elif ec.type == 'command' %}
+    <select name="{{ ec.col }}"{{ form_attr|safe }}
+            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
+      <option value="">{{ ec.label }}: —</option>
+      {% for c in commands %}
+        <option value="{{ c.command_id }}" {{ 'selected' if value == c.command_id }}>{{ c.command_name }}</option>
+      {% endfor %}
+    </select>
   {% elif ec.type == 'date' %}
     <input name="{{ ec.col }}"{{ form_attr|safe }} class="mono" value="{{ value or '' }}" placeholder="{{ ec.label }} (РРРР-ММ-ДД)"
            style="{{ sizing }};font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
@@ -52,7 +60,7 @@
    один flex-рядок не влазять і обрізаються за межею плашки. Вузькі довідники
    з 1-2 додатковими полями (напр. Типи з'єднань) лишаються звичайним
    flex-рядком, що переноситься за потреби. #}
-{% macro lookup_panel(lu, locations=[], branches=[], branch_details=[]) %}
+{% macro lookup_panel(lu, locations=[], branches=[], branch_details=[], commands=[]) %}
   <div class="panel" id="panel-{{ lu.slug }}" style="min-width:0{{ ';grid-column:1 / -1' if lu.wide }}">
     <div class="panel__head">
       <span>{{ lu.label }}</span>
@@ -67,7 +75,7 @@
                    value="{{ item.name }}" class="lookup-grid-row__name"
                    style="font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
             {% for ec in lu.extra_cols %}
-              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, branches, branch_details) }}
+              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, branches, branch_details, commands) }}
             {% endfor %}
             <span class="lookup-grid-row__actions">
               <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
@@ -83,7 +91,7 @@
                    value="{{ item.name }}"
                    style="flex:1 1 160px;min-width:0;font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
             {% for ec in lu.extra_cols %}
-              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, branches, branch_details, mode='flex') }}
+              {{ extra_field(ec, lu.slug ~ '-edit-' ~ item.id, item[ec.col], locations, branches, branch_details, commands, mode='flex') }}
             {% endfor %}
             <span style="display:flex;gap:6px;flex:none">
               <button type="submit" form="{{ lu.slug }}-edit-{{ item.id }}"
@@ -105,7 +113,7 @@
         <input name="name" form="{{ lu.slug }}-create" required placeholder="Нова назва" class="lookup-grid-row__name"
                style="font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
         {% for ec in lu.extra_cols %}
-          {{ extra_field(ec, lu.slug ~ '-create', None, locations, branches, branch_details) }}
+          {{ extra_field(ec, lu.slug ~ '-create', None, locations, branches, branch_details, commands) }}
         {% endfor %}
         <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
       </form>
@@ -114,7 +122,7 @@
         <input name="name" required placeholder="Нова назва"
                style="flex:1 1 160px;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
         {% for ec in lu.extra_cols %}
-          {{ extra_field(ec, None, None, locations, branches, branch_details, mode='flex') }}
+          {{ extra_field(ec, None, None, locations, branches, branch_details, commands, mode='flex') }}
         {% endfor %}
         <button type="submit" class="btn-outline" style="white-space:nowrap;padding:8px 14px">+ Додати</button>
       </form>
@@ -139,27 +147,27 @@
      Деталі родів військ → Оперативні командування → Армійські корпуси →
      Типи родів військ → Типи з'єднань → Локації → Регіони → решта довідників. #}
   {% for lu in lookups if lu.slug == 'military-branches' %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
   {% for lu in lookups if lu.slug == 'military-branch-details' %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
   {% for lu in lookups if lu.slug == 'territorial-commands' %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
   {% for lu in lookups if lu.slug == 'army-corps' %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
   {% for lu in lookups if lu.slug == 'troop-types' %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
   {% for lu in lookups if lu.slug == 'unit-types' %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
   {# ── Локації (половина ширини, як інші плашки) ── #}
@@ -250,7 +258,7 @@
   </div>
 
   {% for lu in lookups if lu.slug not in ['military-branches', 'military-branch-details', 'territorial-commands', 'army-corps', 'troop-types', 'unit-types'] %}
-    {{ lookup_panel(lu, locations, branches, branch_details) }}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
 </div>

@@ -180,6 +180,16 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .corps-filter__goto { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; font-size: 13px; line-height: 1; text-decoration: none; }
 .corps-filter__goto:hover { filter: brightness(1.1); }
 
+/* Широка прямокутна плашка для "окремих сил" (напр. Морська авіація/Морська
+   піхота у ВМС) — емблема → напис → стрілка переходу в один рядок, замість
+   квадратної картки, як в "Оперативних командуваннях". */
+.corps-filter--sm { gap: 10px; }
+.corps-filter--sm .corps-filter__item-wrap { position: static; flex: 0 0 auto; max-width: 240px; display: flex; align-items: stretch; gap: 8px; }
+.corps-filter--sm .corps-filter__item { flex-direction: row; flex: 1 1 auto; width: auto; align-items: center; justify-content: flex-start; text-align: left; gap: 10px; padding: 8px 12px; border-radius: 4px; }
+.corps-filter--sm .corps-filter__emblem { width: 30px; height: 36px; }
+.corps-filter--sm .corps-filter__name { font-size: 12.5px; flex: 1; min-width: 0; -webkit-line-clamp: 1; white-space: nowrap; text-overflow: ellipsis; }
+.corps-filter--sm .corps-filter__goto { position: static; flex: 0 0 36px; width: 36px; height: auto; align-self: stretch; border-radius: 4px; font-size: 15px; }
+
 /* ---------- Equipment card ---------- */
 .equipment-card__desc { color: var(--muted); font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; }
 

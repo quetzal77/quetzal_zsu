@@ -51,8 +51,12 @@ _LOOKUP_TABLES = {
         "extra_cols": [
             {"col": "founded_date", "label": "Дата заснування", "type": "date"},
             {"col": "emblem_file", "label": "Емблема"},
+            # Одне ОК може мати кілька корпусів, тому FK лише в цей бік (з
+            # корпусу на командування) — без проміжної junction-таблиці.
+            {"col": "command_id", "label": "Оперативне командування", "type": "command"},
         ],
-        "wide": True,  # рівно 4 елементи (назва + 2 поля + дії) — влазить в один рядок гріда
+        "wide": True,  # 5 елементів (назва + 3 поля + дії) — потребує ширшого гріда, ніж стандартні 4 колонки
+        "grid_cols": 5,
         "list_max_height": "150px",  # видно не більше ~3 рядків корпусів, решта — скролом
         "dependents": [
             {"table": "brigades", "fk_col": "corps_id", "name_col": "name", "label": "бригад"},
@@ -70,6 +74,7 @@ _LOOKUP_TABLES = {
         "grid_cols": 5,
         "dependents": [
             {"table": "brigades", "fk_col": "territorial_command_id", "name_col": "name", "label": "бригад"},
+            {"table": "army_corps", "fk_col": "command_id", "name_col": "corps_name", "label": "армійських корпусів"},
         ],
     },
     "troop-types": {
@@ -204,6 +209,14 @@ def _military_branch_details(db: sqlite3.Connection):
     ).fetchall()
 
 
+def _territorial_commands(db: sqlite3.Connection):
+    """Список оперативних командувань для extra_cols типу "command" (плашка
+    "Армійські корпуси" обирає ОК, якому підпорядкований корпус)."""
+    return db.execute(
+        "SELECT command_id, command_name FROM territorial_commands ORDER BY command_name COLLATE UKRAINIAN"
+    ).fetchall()
+
+
 def _settings_context(db: sqlite3.Connection) -> dict:
     lookups = [
         {
@@ -222,6 +235,7 @@ def _settings_context(db: sqlite3.Connection) -> dict:
         "locations": _locations(db),
         "branches": _military_branches(db),
         "branch_details": _military_branch_details(db),
+        "commands": _territorial_commands(db),
         "lookups": lookups,
     }
 
@@ -371,7 +385,7 @@ def delete_location(
     return RedirectResponse(url="/settings#panel-locations", status_code=303)
 
 
-_FK_EXTRA_COL_TYPES = {"location", "branch", "branch-details"}
+_FK_EXTRA_COL_TYPES = {"location", "branch", "branch-details", "command"}
 
 
 def _extra_col_values(config: dict, form_values: dict) -> list:
@@ -409,6 +423,7 @@ def create_lookup_item(
     military_branch_id: Optional[str] = Form(None),
     details_id: Optional[str] = Form(None),
     is_force: Optional[str] = Form(None),
+    command_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -421,6 +436,7 @@ def create_lookup_item(
         "military_branch_id": military_branch_id,
         "details_id": details_id,
         "is_force": is_force,
+        "command_id": command_id,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)
@@ -451,6 +467,7 @@ def update_lookup_item(
     military_branch_id: Optional[str] = Form(None),
     details_id: Optional[str] = Form(None),
     is_force: Optional[str] = Form(None),
+    command_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -463,6 +480,7 @@ def update_lookup_item(
         "military_branch_id": military_branch_id,
         "details_id": details_id,
         "is_force": is_force,
+        "command_id": command_id,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)

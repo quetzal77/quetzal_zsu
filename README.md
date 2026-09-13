@@ -73,7 +73,8 @@ quetzal_zsu check   # перевірка без запуску
 
 Або напряму:
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\quetzal_zsu.ps1 run
+
+
 ```
 
 Відкрити: http://127.0.0.1:8000/ (редіректить на `/zsu`)

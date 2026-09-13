@@ -40,7 +40,8 @@ CREATE TABLE military_branches (
     branch_id          INTEGER PRIMARY KEY,
     branch_name        TEXT NOT NULL UNIQUE,
     details_id         INTEGER REFERENCES military_branch_details (details_id),
-    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAM
+        P NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,6 +60,7 @@ CREATE TABLE army_corps (
     corps_name     TEXT NOT NULL UNIQUE,
     founded_date   DATE, -- дата заснування корпусу
     emblem_file    TEXT, -- посилання/ім'я файлу емблеми корпусу
+    command_id     INTEGER REFERENCES territorial_commands (command_id), -- оперативне командування, якому підпорядкований корпус; одне ОК може мати кілька корпусів, тому FK лише в цей бік
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

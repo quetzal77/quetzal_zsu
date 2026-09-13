@@ -152,7 +152,7 @@ def _corps_list_for(db: sqlite3.Connection, brigades) -> list:
         return []
     placeholders = ",".join("?" * len(corps_ids))
     return db.execute(
-        f"""SELECT corps_id, corps_name, emblem_file
+        f"""SELECT corps_id, corps_name, emblem_file, command_id
             FROM army_corps
             WHERE corps_id IN ({placeholders})
             ORDER BY corps_name COLLATE UKRAINIAN""",
@@ -185,10 +185,10 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     brigades = _brigades_where(db, "b.military_branch_id = ?", branch["branch_id"] if branch else -1)
 
     command_ids = {b["territorial_command_id"] for b in brigades if b["territorial_command_id"]}
-    command_list = []
+    all_commands = []
     if command_ids:
         placeholders = ",".join("?" * len(command_ids))
-        command_list = db.execute(
+        all_commands = db.execute(
             f"""SELECT tc.command_id, tc.command_name, tc.is_force, mbd.patch_file
                 FROM territorial_commands tc
                 LEFT JOIN military_branch_details mbd ON tc.details_id = mbd.details_id
@@ -196,6 +196,13 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
                 ORDER BY tc.command_name COLLATE UKRAINIAN""",
             tuple(command_ids),
         ).fetchall()
+
+    # "Сили" (is_force) — не оперативні командування, а окремі структури в межах
+    # роду військ (напр. Морська авіація/Морська піхота у ВМС) — виносяться
+    # окремим рядком над "Оперативними командуваннями", з іншим (широким) стилем
+    # плашки, але тим самим фільтром і переходом углиб (zsu_branch.html).
+    force_list = [c for c in all_commands if c["is_force"]]
+    command_list = [c for c in all_commands if not c["is_force"]]
 
     corps_list = _corps_list_for(db, brigades)
 
@@ -206,6 +213,7 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
             "item": item,
             "branch": branch,
             "brigades": brigades,
+            "force_list": force_list,
             "command_list": command_list,
             "corps_list": corps_list,
             "back_href": "/zsu",
@@ -261,6 +269,7 @@ def zsu_branch_command(
             "item": item,
             "branch": command,
             "brigades": brigades,
+            "force_list": [],
             "command_list": [],
             "corps_list": corps_list,
             "back_href": f"/zsu/{slug}",

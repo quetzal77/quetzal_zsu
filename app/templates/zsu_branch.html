@@ -59,6 +59,22 @@
 
   <div>
     <div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+    {% if force_list %}
+    <div class="page-eyebrow" style="margin-bottom:8px">Окремі сили {{ item.mark }}</div>
+    <div class="corps-filter corps-filter--sm" id="force-filter">
+      {% for c in force_list %}
+      <div class="corps-filter__item-wrap">
+        <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}" title="{{ c.command_name }}">
+          <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
+            {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
+          </span>
+          <span class="corps-filter__name">{{ c.command_name }}</span>
+        </button>
+        <a class="corps-filter__goto" href="/zsu/{{ item.slug }}/{{ c.command_id }}" title="Перейти до структури: {{ c.command_name }}" onclick="event.stopPropagation()">→</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     {% if command_list %}
     <div class="page-eyebrow" style="margin-bottom:8px">Оперативні командування</div>
     <div class="corps-filter" id="command-filter">
@@ -78,16 +94,18 @@
     </div>
     {% endif %}
     {% if corps_list %}
-    <div class="page-eyebrow" style="margin-bottom:8px">Армійські корпуси</div>
-    <div class="corps-filter" id="corps-filter">
-      {% for c in corps_list %}
-      <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}" title="{{ c.corps_name }}">
-        <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
-          {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
-        </span>
-        <span class="corps-filter__name">{{ c.corps_name }}</span>
-      </button>
-      {% endfor %}
+    <div id="corps-section">
+      <div class="page-eyebrow" style="margin-bottom:8px">Армійські корпуси</div>
+      <div class="corps-filter" id="corps-filter">
+        {% for c in corps_list %}
+        <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}" data-command-id="{{ c.command_id or '' }}" title="{{ c.corps_name }}">
+          <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
+            {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
+          </span>
+          <span class="corps-filter__name">{{ c.corps_name }}</span>
+        </button>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
     <div class="grid-cards grid-cards--compact" id="brigade-cards">
@@ -121,12 +139,16 @@
   </div>
 </div>
 
-{% if command_list or corps_list %}
+{% if force_list or command_list or corps_list %}
 <script>
 (function () {
   var cards = document.querySelectorAll('#brigade-cards .brigade-row');
   var dividers = document.querySelectorAll('#brigade-cards > .divider');
+  var corpsSection = document.getElementById('corps-section');
+  var corpsButtons = Array.prototype.slice.call(document.querySelectorAll('#corps-filter .corps-filter__item'));
   var filters = [];
+  var commandState = null; // filter-стан "commandId" — на нього зважають кнопки корпусів
+  var corpsFilterState = null; // filter-стан "corpsId" — скидається, коли активний корпус ховається
 
   function apply() {
     cards.forEach(function (card) {
@@ -144,12 +166,35 @@
       }
       divider.style.display = hasVisible ? '' : 'none';
     });
+
+    // Корпуси, що не належать до обраного оперативного командування/сили,
+    // ховаються разом зі своєю секцією (напр. на сторінці ВМС 30-й корпус
+    // видно лише коли не обрано нічого або обрана Морська піхота).
+    if (corpsSection) {
+      var anyCorpsVisible = false;
+      corpsButtons.forEach(function (btn) {
+        var visible = !commandState || !commandState.activeId || btn.dataset.commandId === commandState.activeId;
+        var wrap = btn.closest('.corps-filter__item-wrap') || btn;
+        wrap.style.display = visible ? '' : 'none';
+        if (visible) anyCorpsVisible = true;
+        // Обраний, але щойно прихований корпус більше не має фільтрувати список.
+        if (!visible && btn.classList.contains('is-active')) {
+          btn.classList.remove('is-active');
+          if (corpsFilterState) corpsFilterState.activeId = null;
+        }
+      });
+      corpsSection.style.display = anyCorpsVisible ? '' : 'none';
+    }
   }
 
-  function setupFilter(filterId, dataKey) {
-    var filter = document.getElementById(filterId);
-    if (!filter) return;
-    var buttons = filter.querySelectorAll('.corps-filter__item');
+  function setupFilter(filterIds, dataKey) {
+    var buttons = [];
+    filterIds.forEach(function (filterId) {
+      var filter = document.getElementById(filterId);
+      if (!filter) return;
+      buttons = buttons.concat(Array.prototype.slice.call(filter.querySelectorAll('.corps-filter__item')));
+    });
+    if (!buttons.length) return null;
     var state = { activeId: null, dataKey: dataKey };
     filters.push(state);
     buttons.forEach(function (btn) {
@@ -160,10 +205,18 @@
         apply();
       });
     });
+    return state;
   }
 
-  setupFilter('command-filter', 'commandId');
-  setupFilter('corps-filter', 'corpsId');
+  // "Окремі сили" (force-filter) і "Оперативні командування" (command-filter)
+  // фільтрують той самий вимір з'єднань (territorial_command_id) — тому
+  // діляться одним filter-станом: вибір плашки в будь-якому з двох рядків
+  // підсвічує лише її саму і однаково фільтрує список з'єднань нижче, а
+  // корпуси, прив'язані до іншого командування, ховаються.
+  commandState = setupFilter(['force-filter', 'command-filter'], 'commandId');
+  corpsFilterState = setupFilter(['corps-filter'], 'corpsId');
+
+  apply();
 })();
 </script>
 {% endif %}
