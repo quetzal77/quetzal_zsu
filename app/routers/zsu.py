@@ -2,7 +2,7 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.database import get_db
+from app.database import _ukrainian_sort_key, get_db
 from app.templates import templates
 
 router = APIRouter(tags=["zsu"])
@@ -120,7 +120,7 @@ def _find_item(slug: str) -> dict:
 
 _BRIGADES_QUERY = """
     SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
-           b.corps_id, b.territorial_command_id,
+           b.corps_id, b.territorial_command_id, b.troop_type_id,
            tt.type_name AS troop_type_name,
            tt.collar_emblem_file AS troop_type_collar_file,
            (
@@ -142,8 +142,10 @@ _BRIGADES_QUERY = """
 """
 
 
-def _brigades_where(db: sqlite3.Connection, where: str, param) -> list:
-    return db.execute(_BRIGADES_QUERY.format(where=where), (param,)).fetchall()
+def _brigades_where(db: sqlite3.Connection, where: str, params) -> list:
+    if not isinstance(params, tuple):
+        params = (params,)
+    return db.execute(_BRIGADES_QUERY.format(where=where), params).fetchall()
 
 
 def _corps_list_for(db: sqlite3.Connection, brigades) -> list:
@@ -196,13 +198,41 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
                 ORDER BY tc.command_name COLLATE UKRAINIAN""",
             tuple(command_ids),
         ).fetchall()
-
-    # "Сили" (is_force) — не оперативні командування, а окремі структури в межах
-    # роду військ (напр. Морська авіація/Морська піхота у ВМС) — виносяться
-    # окремим рядком над "Оперативними командуваннями", з іншим (широким) стилем
-    # плашки, але тим самим фільтром і переходом углиб (zsu_branch.html).
-    force_list = [c for c in all_commands if c["is_force"]]
+    # Командування, позначені як "сила" (is_force), більше не показуються серед
+    # звичайних "Оперативних командувань" — вони виносяться в "Окремі сили"
+    # (нижче), як і типи родів військ з тим самим прапорцем.
     command_list = [c for c in all_commands if not c["is_force"]]
+
+    # "Окремі сили" — не оперативні командування, а сутності, позначені is_force:
+    # або територіальне командування (напр. Морська піхота у ВМС), або тип роду
+    # військ (напр. Морська авіація у ВМС) — виносяться окремим рядком над
+    # "Оперативними командуваннями", з іншим (широким) стилем плашки. Кожен
+    # елемент фільтрує список з'єднань за своїм виміром (territorial_command_id
+    # чи troop_type_id — див. zsu_branch.html) і веде на свою під-сторінку
+    # (/zsu/{slug}/{command_id} чи /zsu/{slug}/type/{type_id}).
+    force_list = [
+        {"kind": "command", "id": c["command_id"], "name": c["command_name"], "patch_file": c["patch_file"]}
+        for c in all_commands if c["is_force"]
+    ]
+
+    troop_type_ids = {b["troop_type_id"] for b in brigades if b["troop_type_id"]}
+    if troop_type_ids and branch:
+        placeholders = ",".join("?" * len(troop_type_ids))
+        troop_type_forces = db.execute(
+            f"""SELECT tt.type_id, tt.type_name, mbd.patch_file
+                FROM troop_types tt
+                LEFT JOIN military_branch_details mbd ON tt.details_id = mbd.details_id
+                WHERE tt.type_id IN ({placeholders})
+                  AND tt.military_branch_id = ? AND tt.is_force = 1
+                ORDER BY tt.type_name COLLATE UKRAINIAN""",
+            (*troop_type_ids, branch["branch_id"]),
+        ).fetchall()
+        force_list += [
+            {"kind": "troop-type", "id": t["type_id"], "name": t["type_name"], "patch_file": t["patch_file"]}
+            for t in troop_type_forces
+        ]
+
+    force_list.sort(key=lambda f: _ukrainian_sort_key(f["name"]))
 
     corps_list = _corps_list_for(db, brigades)
 
@@ -218,6 +248,67 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
             "corps_list": corps_list,
             "back_href": "/zsu",
             "back_label": "Структура Збройних Сил України",
+        },
+    )
+
+
+@router.get("/zsu/{slug}/type/{type_id}")
+def zsu_branch_troop_type(
+    slug: str, type_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)
+):
+    # Саб-бранч типу роду військ, позначеного як "сила" (is_force) — доступний
+    # лише для типів, прив'язаних до роду військ із ACTIVE_SLUGS. Сформований
+    # так само, як і командна під-сторінка нижче, але з'єднання і корпуси
+    # фільтруються по troop_type_id, а не по territorial_command_id.
+    if slug not in ACTIVE_SLUGS:
+        raise HTTPException(status_code=404)
+    parent_item = _find_item(slug)
+
+    branch = db.execute(
+        "SELECT branch_id FROM military_branches WHERE branch_name = ?",
+        (parent_item["name"],),
+    ).fetchone()
+
+    troop_type = db.execute(
+        """SELECT tt.type_id, tt.type_name, tt.is_force, mbd.*, l.city_name, r.region_name
+           FROM troop_types tt
+           LEFT JOIN military_branch_details mbd ON tt.details_id = mbd.details_id
+           LEFT JOIN locations l ON mbd.hq_location_id = l.location_id
+           LEFT JOIN regions r ON l.region_id = r.region_id
+           WHERE tt.type_id = ? AND tt.military_branch_id = ?""",
+        (type_id, branch["branch_id"] if branch else -1),
+    ).fetchone()
+    if not troop_type or not troop_type["is_force"]:
+        raise HTTPException(status_code=404)
+
+    # troop_type сам по собі не унікальний для роду військ (напр. "Зенітні
+    # ракетні війська" трапляються і в ППО Повітряних сил, і в ППО ВМС), тому
+    # фільтруємо ще й по military_branch_id — інакше сюди потрапляли б і
+    # з'єднання з інших родів військ.
+    brigades = _brigades_where(
+        db, "b.troop_type_id = ? AND b.military_branch_id = ?", (type_id, branch["branch_id"])
+    )
+    corps_list = _corps_list_for(db, brigades)
+
+    item = {
+        "slug": f"{slug}/type/{type_id}",
+        "name": troop_type["type_name"],
+        "mark": "".join(w[0] for w in troop_type["type_name"].split()[:2]).upper(),
+        "hint": None,
+    }
+
+    return templates.TemplateResponse(
+        request,
+        "zsu_branch.html",
+        {
+            "item": item,
+            "branch": troop_type,
+            "brigades": brigades,
+            "force_list": [],
+            "command_list": [],
+            "corps_list": corps_list,
+            "back_href": f"/zsu/{slug}",
+            "back_label": parent_item["name"],
         },
     )
 

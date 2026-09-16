@@ -144,21 +144,11 @@
 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;align-items:start">
 
   {# Явний порядок плашок (не порядок словника _LOOKUP_TABLES): Роди військ →
-     Деталі родів військ → Оперативні командування → Армійські корпуси →
-     Типи родів військ → Типи з'єднань → Локації → Регіони → решта довідників. #}
+     Типи родів військ → Оперативні командування → Деталі родів військ → Армійські корпуси →
+     Локації → Регіони → Типи з'єднань → решта довідників. Типи родів військ, Оперативні
+     командування, Деталі родів військ і Армійські корпуси — усі "wide" (span 1/-1),
+     тому кожна автоматично займає власний рядок — ручний заповнювач тут не потрібен. #}
   {% for lu in lookups if lu.slug == 'military-branches' %}
-    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
-  {% endfor %}
-
-  {% for lu in lookups if lu.slug == 'military-branch-details' %}
-    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
-  {% endfor %}
-
-  {% for lu in lookups if lu.slug == 'territorial-commands' %}
-    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
-  {% endfor %}
-
-  {% for lu in lookups if lu.slug == 'army-corps' %}
     {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
@@ -166,7 +156,15 @@
     {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
-  {% for lu in lookups if lu.slug == 'unit-types' %}
+  {% for lu in lookups if lu.slug == 'territorial-commands' %}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'military-branch-details' %}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
+  {% endfor %}
+
+  {% for lu in lookups if lu.slug == 'army-corps' %}
     {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
   {% endfor %}
 
@@ -256,6 +254,10 @@
       </form>
     </div>
   </div>
+
+  {% for lu in lookups if lu.slug == 'unit-types' %}
+    {{ lookup_panel(lu, locations, branches, branch_details, commands) }}
+  {% endfor %}
 
   {% for lu in lookups if lu.slug not in ['military-branches', 'military-branch-details', 'territorial-commands', 'army-corps', 'troop-types', 'unit-types'] %}
     {{ lookup_panel(lu, locations, branches, branch_details, commands) }}

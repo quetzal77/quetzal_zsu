@@ -70,7 +70,10 @@ CREATE TABLE troop_types (
     type_name            TEXT NOT NULL UNIQUE,
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    collar_emblem_file   TEXT -- посилання/ім'я файлу комірної емблеми
+    collar_emblem_file   TEXT, -- посилання/ім'я файлу комірної емблеми
+    military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому належить тип
+    details_id           INTEGER REFERENCES military_branch_details (details_id),
+    is_force              INTEGER NOT NULL DEFAULT 0  -- позначка "сила", як у territorial_commands
 );
 
 CREATE TABLE unit_types (

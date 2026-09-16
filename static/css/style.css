@@ -168,7 +168,7 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .tile--frozen .tile__mark { background: var(--ghost); }
 
 /* ---------- Corps filter (/zsu/{slug}) ---------- */
-.corps-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.corps-filter { display: flex; flex-wrap: wrap; gap: 10px; }
 .corps-filter__item { flex: 0 0 130px; width: 130px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; cursor: pointer; background: none; border: 1px solid var(--line-2); border-radius: 4px; padding: 12px 8px; transition: border-color .15s, background .15s; color: inherit; font-family: inherit; }
 .corps-filter__item:hover { border-color: var(--green); }
 .corps-filter__item.is-active { border-color: var(--green); background: var(--tint-bg); }
@@ -189,6 +189,22 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .corps-filter--sm .corps-filter__emblem { width: 30px; height: 36px; }
 .corps-filter--sm .corps-filter__name { font-size: 12.5px; flex: 1; min-width: 0; -webkit-line-clamp: 1; white-space: nowrap; text-overflow: ellipsis; }
 .corps-filter--sm .corps-filter__goto { position: static; flex: 0 0 36px; width: 36px; height: auto; align-self: stretch; border-radius: 4px; font-size: 15px; }
+
+/* ---------- Права колонка сторінки роду військ (/zsu/{slug}) ----------
+   Єдиний власник вертикального ритму — flex-колонка з `gap`.
+   У flex-контейнері margin-и не колапсять і не сумуються з gap, тому
+   відступ між секціями (лічильник → Окремі сили → Оперативні командування →
+   Армійські корпуси → картки з'єднань) завжди рівно --branch-gap,
+   незалежно від того, які секції відрендерились. Тому всередині колонки
+   всі власні вертикальні margin-и обнулені; єдиний локальний відступ —
+   8px між заголовком секції і рядком її плашок. */
+.branch-side { --branch-gap: 18px; display: flex; flex-direction: column; gap: var(--branch-gap); }
+.branch-side > .page-eyebrow { margin: 0; }
+.branch-side__section > .page-eyebrow { margin: 0 0 8px; }
+.branch-side .corps-filter { margin: 0; }
+/* .divider має margin-top: 6px для відбивки груп усередині сітки — у першої
+   групи він додавався б до gap секції, тому там його знімаємо. */
+.branch-side .grid-cards > .divider:first-child { margin-top: 0; }
 
 /* ---------- Equipment card ---------- */
 .equipment-card__desc { color: var(--muted); font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; }

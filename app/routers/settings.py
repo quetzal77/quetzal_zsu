@@ -82,7 +82,12 @@ _LOOKUP_TABLES = {
         "label": "Типи родів військ", "singular": "тип роду військ",
         "extra_cols": [
             {"col": "collar_emblem_file", "label": "Комірна емблема"},
+            {"col": "military_branch_id", "label": "Рід військ", "type": "branch"},
+            {"col": "details_id", "label": "Деталі", "type": "branch-details"},
+            {"col": "is_force", "label": "Сила", "type": "checkbox"},
         ],
+        "wide": True,  # 6 елементів (назва + 4 поля + дії) — потребує ширшого гріда, ніж стандартні 4 колонки
+        "grid_cols": 6,
         "dependents": [
             {"table": "brigades", "fk_col": "troop_type_id", "name_col": "name", "label": "бригад"},
         ],
