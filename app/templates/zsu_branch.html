@@ -65,8 +65,10 @@
         <div class="corps-filter__item-wrap">
           {% if c.kind == 'command' %}
           <button type="button" class="corps-filter__item" data-command-id="{{ c.id }}" title="{{ c.name }}">
-          {% else %}
+          {% elif c.kind == 'troop-type' %}
           <button type="button" class="corps-filter__item" data-troop-type-id="{{ c.id }}" title="{{ c.name }}">
+          {% else %}
+          <button type="button" class="corps-filter__item" data-details-id="{{ c.id }}" title="{{ c.name }}">
           {% endif %}
             <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
               {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
@@ -74,7 +76,7 @@
             <span class="corps-filter__name">{{ c.name }}</span>
           </button>
           <a class="corps-filter__goto"
-             href="/zsu/{{ item.slug }}/{{ ('type/' ~ c.id) if c.kind == 'troop-type' else c.id }}"
+             href="/zsu/{{ item.slug }}/{{ ('type/' ~ c.id) if c.kind == 'troop-type' else ('details/' ~ c.id) if c.kind == 'details' else c.id }}"
              title="Перейти до структури: {{ c.name }}" onclick="event.stopPropagation()">→</a>
         </div>
         {% endfor %}
@@ -83,7 +85,7 @@
     {% endif %}
     {% if command_list %}
     <div class="branch-side__section">
-      <div class="page-eyebrow">Оперативні командування</div>
+      <div class="page-eyebrow">Органи військового управління</div>
       <div class="corps-filter" id="command-filter">
         {% for c in command_list %}
         <div class="corps-filter__item-wrap">
@@ -123,7 +125,7 @@
             <span>{{ b.troop_type_name or 'Без типу військ' }}</span>
           </div>
         {% endif %}
-        <a class="card card--compact brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" data-troop-type-id="{{ b.troop_type_id or '' }}" href="/brigades/{{ b.brigade_id }}">
+        <a class="card card--compact brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" data-troop-type-id="{{ b.troop_type_id or '' }}" data-details-id="{{ b.force_details_id or '' }}" href="/brigades/{{ b.brigade_id }}">
           <div class="card__head">
             <span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
               {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
@@ -227,25 +229,32 @@
     state.buttons.forEach(function (b) { b.classList.remove('is-active'); });
   }
 
-  // "Окремі сили" (force-filter) містять два види плашок: командування
+  // "Окремі сили" (force-filter) містять три види плашок: командування
   // (is_force) — діляться виміром commandId з "Оперативними командуваннями",
-  // і типи родів військ — окремий вимір troopTypeId. Обидва виміри однаково
+  // типи родів військ — окремий вимір troopTypeId, і об'єднані плашки кількох
+  // is_force сутностей з одним записом "Деталі родів військ" — вимір detailsId
+  // (див. group-логіку в zsu_branch у app/routers/zsu.py). Усі виміри однаково
   // впливають на видимість корпусів (див. apply() вище — корпус ховається,
   // якщо серед видимих карток немає жодної з його corpsId).
   var commandState = setupFilter(['force-filter', 'command-filter'], 'commandId');
   var troopTypeState = setupFilter(['force-filter'], 'troopTypeId');
+  var detailsState = setupFilter(['force-filter'], 'detailsId');
   corpsFilterState = setupFilter(['corps-filter'], 'corpsId');
 
-  // Дві "окремі сили" несумісні одна з одною (обраний тип роду військ + обране
-  // командування-сила разом майже завжди дають порожній список), тому вибір
-  // будь-якої плашки в рядку "Окремі сили" скидає активний вибір з ІНШОГО
-  // виміру цього ж рядка. На "Оперативні командування" (звичайні, не-сили)
+  // Різні виміри "окремих сил" несумісні один з одним (обраний тип роду військ
+  // + обране командування-сила разом майже завжди дають порожній список), тому
+  // вибір будь-якої плашки в рядку "Окремі сили" скидає активний вибір з ІНШИХ
+  // вимірів цього ж рядка. На "Оперативні командування" (звичайні, не-сили)
   // це не поширюється — той вимір ділить commandId з force-командуваннями
   // й так само мутуально виключає їх одне одного через спільний стан.
+  var forceDims = { commandId: commandState, troopTypeId: troopTypeState, detailsId: detailsState };
   var forceButtons = document.querySelectorAll('#force-filter .corps-filter__item');
   forceButtons.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      clearState(btn.hasAttribute('data-command-id') ? troopTypeState : commandState);
+      Object.keys(forceDims).forEach(function (dataKey) {
+        var attr = 'data-' + dataKey.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); });
+        if (!btn.hasAttribute(attr)) clearState(forceDims[dataKey]);
+      });
       apply();
     });
   });

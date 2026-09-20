@@ -11,10 +11,10 @@ router = APIRouter(tags=["zsu"])
 # data-slug лишається заготовкою під майбутній роутинг (напр. /zsu/{slug}).
 # Функціональність готова лише для "Сили безпілотних систем", "Сили спеціальних
 # операцій", "Десантно-штурмові війська", "Військово-морські сили", "Повітряні
-# сили", "Сили територіальної оборони" (з'єднання ТрО ще не додані — сторінка
-# показує порожній список) і "Генеральний штаб" (з'єднань немає за визначенням —
-# сторінка показує порожній список) — решта плашок заморожені (disabled) до
-# появи відповідних сторінок.
+# сили", "Сухопутні війська", "Сили територіальної оборони" (з'єднання ТрО ще не
+# додані — сторінка показує порожній список) і "Генеральний штаб" (з'єднань
+# немає за визначенням — сторінка показує порожній список) — решта плашок
+# заморожені (disabled) до появи відповідних сторінок.
 ACTIVE_SLUGS = {
     "unmanned-systems-forces",
     "special-operations-forces",
@@ -23,6 +23,7 @@ ACTIVE_SLUGS = {
     "air-force",
     "territorial-defense-forces",
     "general-staff",
+    "ground-forces",
 }
 STRUCTURE = [
     {
@@ -123,6 +124,9 @@ _BRIGADES_QUERY = """
            b.corps_id, b.territorial_command_id, b.troop_type_id,
            tt.type_name AS troop_type_name,
            tt.collar_emblem_file AS troop_type_collar_file,
+           CASE WHEN tt.is_force = 1 THEN tt.details_id
+                WHEN tc.is_force = 1 THEN tc.details_id
+                ELSE NULL END AS force_details_id,
            (
                SELECT bt.unit_name
                FROM brigade_traditions bt
@@ -132,6 +136,7 @@ _BRIGADES_QUERY = """
            ) AS honorific_name
     FROM brigades b
     LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
+    LEFT JOIN territorial_commands tc ON b.territorial_command_id = tc.command_id
     WHERE {where}
     ORDER BY
         CASE WHEN tt.type_name IS NULL THEN 2
@@ -191,7 +196,8 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     if command_ids:
         placeholders = ",".join("?" * len(command_ids))
         all_commands = db.execute(
-            f"""SELECT tc.command_id, tc.command_name, tc.is_force, mbd.patch_file
+            f"""SELECT tc.command_id, tc.command_name, tc.is_force, tc.details_id,
+                       mbd.patch_file, mbd.details_name
                 FROM territorial_commands tc
                 LEFT JOIN military_branch_details mbd ON tc.details_id = mbd.details_id
                 WHERE tc.command_id IN ({placeholders})
@@ -210,8 +216,9 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     # елемент фільтрує список з'єднань за своїм виміром (territorial_command_id
     # чи troop_type_id — див. zsu_branch.html) і веде на свою під-сторінку
     # (/zsu/{slug}/{command_id} чи /zsu/{slug}/type/{type_id}).
-    force_list = [
-        {"kind": "command", "id": c["command_id"], "name": c["command_name"], "patch_file": c["patch_file"]}
+    force_raw = [
+        {"kind": "command", "id": c["command_id"], "name": c["command_name"],
+         "patch_file": c["patch_file"], "details_id": c["details_id"], "details_name": c["details_name"]}
         for c in all_commands if c["is_force"]
     ]
 
@@ -219,7 +226,7 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     if troop_type_ids and branch:
         placeholders = ",".join("?" * len(troop_type_ids))
         troop_type_forces = db.execute(
-            f"""SELECT tt.type_id, tt.type_name, mbd.patch_file
+            f"""SELECT tt.type_id, tt.type_name, tt.details_id, mbd.patch_file, mbd.details_name
                 FROM troop_types tt
                 LEFT JOIN military_branch_details mbd ON tt.details_id = mbd.details_id
                 WHERE tt.type_id IN ({placeholders})
@@ -227,10 +234,34 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
                 ORDER BY tt.type_name COLLATE UKRAINIAN""",
             (*troop_type_ids, branch["branch_id"]),
         ).fetchall()
-        force_list += [
-            {"kind": "troop-type", "id": t["type_id"], "name": t["type_name"], "patch_file": t["patch_file"]}
+        force_raw += [
+            {"kind": "troop-type", "id": t["type_id"], "name": t["type_name"],
+             "patch_file": t["patch_file"], "details_id": t["details_id"], "details_name": t["details_name"]}
             for t in troop_type_forces
         ]
+
+    # Кілька is_force сутностей (типи родів військ і/або командування), що
+    # посилаються на один запис "Деталі родів військ" (military_branch_details),
+    # об'єднуються в одну плашку "Окремих сил" з назвою цього запису — напр.
+    # Бомбардувально-розвідувальна/Винищувальна/Штурмова авіація Повітряних сил
+    # об'єднані під "Авіація повітряних сил". Плашка веде на
+    # /zsu/{slug}/details/{details_id}, де показані з'єднання всіх об'єднаних
+    # сутностей разом (zsu_branch_details нижче).
+    groups: dict = {}
+    force_list = []
+    for f in force_raw:
+        if f["details_id"] is not None:
+            groups.setdefault(f["details_id"], []).append(f)
+        else:
+            force_list.append(f)
+    for details_id, members in groups.items():
+        if len(members) > 1:
+            force_list.append({
+                "kind": "details", "id": details_id,
+                "name": members[0]["details_name"], "patch_file": members[0]["patch_file"],
+            })
+        else:
+            force_list.append(members[0])
 
     force_list.sort(key=lambda f: _ukrainian_sort_key(f["name"]))
 
@@ -359,6 +390,88 @@ def zsu_branch_command(
         {
             "item": item,
             "branch": command,
+            "brigades": brigades,
+            "force_list": [],
+            "command_list": [],
+            "corps_list": corps_list,
+            "back_href": f"/zsu/{slug}",
+            "back_label": parent_item["name"],
+        },
+    )
+
+
+@router.get("/zsu/{slug}/details/{details_id}")
+def zsu_branch_details(
+    slug: str, details_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)
+):
+    # Об'єднана саб-сторінка для кількох is_force сутностей (типів родів військ
+    # і/або територіальних командувань), що посилаються на один запис
+    # military_branch_details (напр. Бомбардувально-розвідувальна/Винищувальна/
+    # Штурмова авіація Повітряних сил об'єднані під "Авіація повітряних сил" —
+    # див. групування у zsu_branch вище) — показує з'єднання всіх об'єднаних
+    # сутностей разом.
+    if slug not in ACTIVE_SLUGS:
+        raise HTTPException(status_code=404)
+    parent_item = _find_item(slug)
+
+    branch = db.execute(
+        "SELECT branch_id FROM military_branches WHERE branch_name = ?",
+        (parent_item["name"],),
+    ).fetchone()
+    branch_id = branch["branch_id"] if branch else -1
+
+    details = db.execute(
+        """SELECT mbd.*, l.city_name, r.region_name
+           FROM military_branch_details mbd
+           LEFT JOIN locations l ON mbd.hq_location_id = l.location_id
+           LEFT JOIN regions r ON l.region_id = r.region_id
+           WHERE mbd.details_id = ?""",
+        (details_id,),
+    ).fetchone()
+    if not details:
+        raise HTTPException(status_code=404)
+
+    troop_type_ids = [
+        r["type_id"] for r in db.execute(
+            "SELECT type_id FROM troop_types WHERE details_id = ? AND military_branch_id = ? AND is_force = 1",
+            (details_id, branch_id),
+        ).fetchall()
+    ]
+    command_ids = [
+        r["command_id"] for r in db.execute(
+            "SELECT command_id FROM territorial_commands WHERE details_id = ? AND military_branch_id = ? AND is_force = 1",
+            (details_id, branch_id),
+        ).fetchall()
+    ]
+    if len(troop_type_ids) + len(command_ids) < 2:
+        # Об'єднана сторінка має сенс лише тоді, коли справді є що об'єднувати.
+        raise HTTPException(status_code=404)
+
+    conditions = []
+    params: list = []
+    if troop_type_ids:
+        conditions.append(f"b.troop_type_id IN ({','.join('?' * len(troop_type_ids))})")
+        params += troop_type_ids
+    if command_ids:
+        conditions.append(f"b.territorial_command_id IN ({','.join('?' * len(command_ids))})")
+        params += command_ids
+    where = f"b.military_branch_id = ? AND ({' OR '.join(conditions)})"
+    brigades = _brigades_where(db, where, (branch_id, *params))
+    corps_list = _corps_list_for(db, brigades)
+
+    item = {
+        "slug": f"{slug}/details/{details_id}",
+        "name": details["details_name"],
+        "mark": "".join(w[0] for w in details["details_name"].split()[:2]).upper(),
+        "hint": None,
+    }
+
+    return templates.TemplateResponse(
+        request,
+        "zsu_branch.html",
+        {
+            "item": item,
+            "branch": details,
             "brigades": brigades,
             "force_list": [],
             "command_list": [],
