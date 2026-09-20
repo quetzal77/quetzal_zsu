@@ -39,7 +39,8 @@ STRUCTURE = [
     {
         "title": "Види ЗСУ",
         "items": [
-            {"slug": "ground-forces", "mark": "СВ", "name": "Сухопутні війська"},
+            {"slug": "ground-forces", "mark": "СВ", "name": "Сухопутні війська",
+             "icon": "forces/ground_forces_patch.png"},
             {"slug": "air-force", "mark": "ПС", "name": "Повітряні сили",
              "icon": "forces/air_force_patch.png"},
             {"slug": "navy", "mark": "ВМС", "name": "Військово-морські сили",
