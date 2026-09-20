@@ -29,6 +29,13 @@
                value="{{ tradition.photo or '' }}"
                placeholder="Додай шлях до фото">
     </div>
+
+    <div class="field field--wide">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+        <input type="checkbox" name="is_honorific" value="on" {{ 'checked' if tradition and tradition.is_honorific }}>
+        Почесна (дозволяє вказувати "почесне ім'я" з'єднання)
+      </label>
+    </div>
   </div>
 
   {# ── Секція з'єднань (тільки при редагуванні) ── #}

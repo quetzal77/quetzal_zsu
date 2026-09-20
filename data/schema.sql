@@ -39,9 +39,9 @@ CREATE TABLE military_branch_details (
 CREATE TABLE military_branches (
     branch_id          INTEGER PRIMARY KEY,
     branch_name        TEXT NOT NULL UNIQUE,
-    details_id         INTEGER REFERENCES military_branch_details (details_id)
-                               ,
-    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    details_id         INTEGER REFERENCES military_branch_details (details_id),
+    created_at         TIMESTAM
+        P NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -50,6 +50,7 @@ CREATE TABLE territorial_commands (
     command_name         TEXT NOT NULL UNIQUE,
     military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому підпорядковане ОК
     details_id           INTEGER REFERENCES military_branch_details (details_id),
+    is_force             INTEGER NOT NULL DEFAULT 0, -- позначка "сила" (напр. Сили ТрО) на відміну від звичайного ОК
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -59,6 +60,7 @@ CREATE TABLE army_corps (
     corps_name     TEXT NOT NULL UNIQUE,
     founded_date   DATE, -- дата заснування корпусу
     emblem_file    TEXT, -- посилання/ім'я файлу емблеми корпусу
+    command_id     INTEGER REFERENCES territorial_commands (command_id), -- оперативне командування, якому підпорядкований корпус; одне ОК може мати кілька корпусів, тому FK лише в цей бік
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -68,7 +70,10 @@ CREATE TABLE troop_types (
     type_name            TEXT NOT NULL UNIQUE,
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    collar_emblem_file   TEXT -- посилання/ім'я файлу комірної емблеми
+    collar_emblem_file   TEXT, -- посилання/ім'я файлу комірної емблеми
+    military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому належить тип
+    details_id           INTEGER REFERENCES military_branch_details (details_id),
+    is_force              INTEGER NOT NULL DEFAULT 0  -- позначка "сила", як у territorial_commands
 );
 
 CREATE TABLE unit_types (

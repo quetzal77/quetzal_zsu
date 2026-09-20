@@ -7,7 +7,7 @@
   <div class="detail-head__main">
     <div class="detail-eyebrow">Традиція</div>
     <h1>{{ tradition.title }}</h1>
-    {% if tradition.description %}<div class="sub" style="margin-top:8px">{{ tradition.description }}</div>{% endif %}
+    {% if tradition.description %}<div class="sub" style="margin-top:8px">{{ tradition.description | safe }}</div>{% endif %}
     {% if tradition.photo %}
       <div style="margin-top:16px">
         <img src="/static/img/{{ tradition.photo }}" alt="{{ tradition.title }}"

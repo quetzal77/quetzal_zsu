@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ item.name }} — Портал з'єднань ЗСУ{% endblock %}
 {% block content %}
-<a class="back-link" href="/zsu">← Структура Збройних Сил України</a>
+<a class="back-link" href="{{ back_href or '/zsu' }}">← {{ back_label or "Структура Збройних Сил України" }}</a>
 
 <div class="detail-head">
   <div class="detail-head__main">
@@ -22,67 +22,97 @@
           </span>
         </dd>
       </div>
+      {% if branch and branch.founded_date %}
       <div class="branch-info__row">
         <dt>Дата заснування</dt>
-        <dd><span class="branch-info__value">{{ (branch.founded_date if branch else None) | uk_date }}</span></dd>
+        <dd><span class="branch-info__value">{{ branch.founded_date | uk_date }}</span></dd>
       </div>
+      {% endif %}
+      {% if branch and branch.city_name %}
       <div class="branch-info__row">
         <dt>Штаб</dt>
-        <dd><span class="branch-info__value">{{ (branch.city_name if branch else None) or '—' }}{% if branch and branch.region_name %}, {{ branch.region_name }}{% endif %}</span></dd>
+        <dd><span class="branch-info__value">{{ branch.city_name }}{% if branch.region_name %}, {{ branch.region_name }}{% endif %}</span></dd>
       </div>
+      {% endif %}
+      {% if branch and branch.flag_file %}
       <div class="branch-info__row">
         <dt>Прапор</dt>
-        <dd>
-          {% if branch and branch.flag_file %}
-          <span class="branch-info__thumb branch-info__thumb--flag"><img src="/static/img/{{ branch.flag_file }}" alt="Прапор: {{ item.name }}"></span>
-          {% else %}<span class="branch-info__value">—</span>{% endif %}
-        </dd>
+        <dd><span class="branch-info__thumb branch-info__thumb--flag"><img src="/static/img/{{ branch.flag_file }}" alt="Прапор: {{ item.name }}"></span></dd>
       </div>
+      {% endif %}
+      {% if branch and branch.patch_file %}
       <div class="branch-info__row">
         <dt>Нарукавний знак</dt>
-        <dd>
-          {% if branch and branch.patch_file %}
-          <span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.patch_file }}" alt="Нарукавний знак: {{ item.name }}"></span>
-          {% else %}<span class="branch-info__value">—</span>{% endif %}
-        </dd>
+        <dd><span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.patch_file }}" alt="Нарукавний знак: {{ item.name }}"></span></dd>
       </div>
+      {% endif %}
+      {% if branch and branch.beret_badge_file %}
       <div class="branch-info__row">
         <dt>Беретний знак</dt>
-        <dd>
-          {% if branch and branch.beret_badge_file %}
-          <span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.beret_badge_file }}" alt="Беретний знак: {{ item.name }}"></span>
-          {% else %}<span class="branch-info__value">—</span>{% endif %}
-        </dd>
+        <dd><span class="branch-info__thumb branch-info__thumb--patch has-image"><img src="/static/img/{{ branch.beret_badge_file }}" alt="Беретний знак: {{ item.name }}"></span></dd>
       </div>
+      {% endif %}
     </div>
   </div>
 
-  <div>
-    <div class="page-eyebrow" style="margin-bottom:12px">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+  <div class="branch-side">
+    <div class="page-eyebrow">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+    {% if force_list %}
+    <div class="branch-side__section">
+      <div class="page-eyebrow">Окремі сили {{ item.mark }}</div>
+      <div class="corps-filter corps-filter--sm" id="force-filter">
+        {% for c in force_list %}
+        <div class="corps-filter__item-wrap">
+          {% if c.kind == 'command' %}
+          <button type="button" class="corps-filter__item" data-command-id="{{ c.id }}" title="{{ c.name }}">
+          {% elif c.kind == 'troop-type' %}
+          <button type="button" class="corps-filter__item" data-troop-type-id="{{ c.id }}" title="{{ c.name }}">
+          {% else %}
+          <button type="button" class="corps-filter__item" data-details-id="{{ c.id }}" title="{{ c.name }}">
+          {% endif %}
+            <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
+              {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
+            </span>
+            <span class="corps-filter__name">{{ c.name }}</span>
+          </button>
+          <a class="corps-filter__goto"
+             href="/zsu/{{ item.slug }}/{{ ('type/' ~ c.id) if c.kind == 'troop-type' else ('details/' ~ c.id) if c.kind == 'details' else c.id }}"
+             title="Перейти до структури: {{ c.name }}" onclick="event.stopPropagation()">→</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     {% if command_list %}
-    <div class="page-eyebrow" style="margin-bottom:8px">Оперативні командування</div>
-    <div class="corps-filter" id="command-filter">
-      {% for c in command_list %}
-      <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}">
-        <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
-          {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
-        </span>
-        <span class="corps-filter__name">{{ c.command_name }}</span>
-      </button>
-      {% endfor %}
+    <div class="branch-side__section">
+      <div class="page-eyebrow">Органи військового управління</div>
+      <div class="corps-filter" id="command-filter">
+        {% for c in command_list %}
+        <div class="corps-filter__item-wrap">
+          <button type="button" class="corps-filter__item" data-command-id="{{ c.command_id }}" title="{{ c.command_name }}">
+            <span class="corps-filter__emblem {{ 'has-image' if c.patch_file }}">
+              {% if c.patch_file %}<img src="/static/img/{{ c.patch_file }}" alt="">{% endif %}
+            </span>
+            <span class="corps-filter__name">{{ c.command_name }}</span>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
     {% if corps_list %}
-    <div class="page-eyebrow" style="margin-bottom:8px">Армійські корпуси</div>
-    <div class="corps-filter" id="corps-filter">
-      {% for c in corps_list %}
-      <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}">
-        <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
-          {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
-        </span>
-        <span class="corps-filter__name">{{ c.corps_name }}</span>
-      </button>
-      {% endfor %}
+    <div class="branch-side__section" id="corps-section">
+      <div class="page-eyebrow">Армійські корпуси</div>
+      <div class="corps-filter" id="corps-filter">
+        {% for c in corps_list %}
+        <button type="button" class="corps-filter__item" data-corps-id="{{ c.corps_id }}" data-command-id="{{ c.command_id or '' }}" title="{{ c.corps_name }}">
+          <span class="corps-filter__emblem {{ 'has-image' if c.emblem_file }}">
+            {% if c.emblem_file %}<img src="/static/img/{{ c.emblem_file }}" alt="">{% endif %}
+          </span>
+          <span class="corps-filter__name">{{ c.corps_name }}</span>
+        </button>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
     <div class="grid-cards grid-cards--compact" id="brigade-cards">
@@ -95,7 +125,7 @@
             <span>{{ b.troop_type_name or 'Без типу військ' }}</span>
           </div>
         {% endif %}
-        <a class="card card--compact brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" href="/brigades/{{ b.brigade_id }}">
+        <a class="card card--compact brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" data-troop-type-id="{{ b.troop_type_id or '' }}" data-details-id="{{ b.force_details_id or '' }}" href="/brigades/{{ b.brigade_id }}">
           <div class="card__head">
             <span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
               {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
@@ -116,12 +146,15 @@
   </div>
 </div>
 
-{% if command_list or corps_list %}
+{% if force_list or command_list or corps_list %}
 <script>
 (function () {
   var cards = document.querySelectorAll('#brigade-cards .brigade-row');
   var dividers = document.querySelectorAll('#brigade-cards > .divider');
+  var corpsSection = document.getElementById('corps-section');
+  var corpsButtons = Array.prototype.slice.call(document.querySelectorAll('#corps-filter .corps-filter__item'));
   var filters = [];
+  var corpsFilterState = null; // filter-стан "corpsId" — скидається, коли активний корпус ховається
 
   function apply() {
     cards.forEach(function (card) {
@@ -139,13 +172,45 @@
       }
       divider.style.display = hasVisible ? '' : 'none';
     });
+
+    // Корпус ховається, якщо серед уже відфільтрованих (за будь-яким активним
+    // виміром — командування, тип роду військ тощо) з'єднань немає жодного,
+    // що йому належить (напр. на сторінці ВМС 30-й корпус видно лише коли не
+    // обрано нічого або обрана сила/командування, з'єднання якого до нього
+    // входять).
+    if (corpsSection) {
+      var anyCorpsVisible = false;
+      corpsButtons.forEach(function (btn) {
+        var corpsId = btn.dataset.corpsId;
+        var visible = Array.prototype.some.call(cards, function (card) {
+          return card.style.display !== 'none' && card.dataset.corpsId === corpsId;
+        });
+        var wrap = btn.closest('.corps-filter__item-wrap') || btn;
+        wrap.style.display = visible ? '' : 'none';
+        if (visible) anyCorpsVisible = true;
+        // Обраний, але щойно прихований корпус більше не має фільтрувати список.
+        if (!visible && btn.classList.contains('is-active')) {
+          btn.classList.remove('is-active');
+          if (corpsFilterState) corpsFilterState.activeId = null;
+        }
+      });
+      corpsSection.style.display = anyCorpsVisible ? '' : 'none';
+    }
   }
 
-  function setupFilter(filterId, dataKey) {
-    var filter = document.getElementById(filterId);
-    if (!filter) return;
-    var buttons = filter.querySelectorAll('.corps-filter__item');
-    var state = { activeId: null, dataKey: dataKey };
+  function setupFilter(filterIds, dataKey) {
+    // Атрибут-селектор із dataKey (напр. "troopTypeId" -> "data-troop-type-id"),
+    // щоб плашка "Окремі сили" з мішаними кнопками (командування/тип роду
+    // військ) розбиралась по потрібному виміру, а не збирала всі кнопки поспіль.
+    var attr = 'data-' + dataKey.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); });
+    var buttons = [];
+    filterIds.forEach(function (filterId) {
+      var filter = document.getElementById(filterId);
+      if (!filter) return;
+      buttons = buttons.concat(Array.prototype.slice.call(filter.querySelectorAll('.corps-filter__item[' + attr + ']')));
+    });
+    if (!buttons.length) return null;
+    var state = { activeId: null, dataKey: dataKey, buttons: buttons };
     filters.push(state);
     buttons.forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -155,10 +220,46 @@
         apply();
       });
     });
+    return state;
   }
 
-  setupFilter('command-filter', 'commandId');
-  setupFilter('corps-filter', 'corpsId');
+  function clearState(state) {
+    if (!state || !state.activeId) return;
+    state.activeId = null;
+    state.buttons.forEach(function (b) { b.classList.remove('is-active'); });
+  }
+
+  // "Окремі сили" (force-filter) містять три види плашок: командування
+  // (is_force) — діляться виміром commandId з "Оперативними командуваннями",
+  // типи родів військ — окремий вимір troopTypeId, і об'єднані плашки кількох
+  // is_force сутностей з одним записом "Деталі родів військ" — вимір detailsId
+  // (див. group-логіку в zsu_branch у app/routers/zsu.py). Усі виміри однаково
+  // впливають на видимість корпусів (див. apply() вище — корпус ховається,
+  // якщо серед видимих карток немає жодної з його corpsId).
+  var commandState = setupFilter(['force-filter', 'command-filter'], 'commandId');
+  var troopTypeState = setupFilter(['force-filter'], 'troopTypeId');
+  var detailsState = setupFilter(['force-filter'], 'detailsId');
+  corpsFilterState = setupFilter(['corps-filter'], 'corpsId');
+
+  // Різні виміри "окремих сил" несумісні один з одним (обраний тип роду військ
+  // + обране командування-сила разом майже завжди дають порожній список), тому
+  // вибір будь-якої плашки в рядку "Окремі сили" скидає активний вибір з ІНШИХ
+  // вимірів цього ж рядка. На "Оперативні командування" (звичайні, не-сили)
+  // це не поширюється — той вимір ділить commandId з force-командуваннями
+  // й так само мутуально виключає їх одне одного через спільний стан.
+  var forceDims = { commandId: commandState, troopTypeId: troopTypeState, detailsId: detailsState };
+  var forceButtons = document.querySelectorAll('#force-filter .corps-filter__item');
+  forceButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      Object.keys(forceDims).forEach(function (dataKey) {
+        var attr = 'data-' + dataKey.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); });
+        if (!btn.hasAttribute(attr)) clearState(forceDims[dataKey]);
+      });
+      apply();
+    });
+  });
+
+  apply();
 })();
 </script>
 {% endif %}

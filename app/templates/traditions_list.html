@@ -15,7 +15,7 @@
       <div class="tradition-card__body">
         <div class="tradition-card__title">{{ t.title }}</div>
         {% if t.description %}
-          <div class="tradition-card__desc">{{ t.description }}</div>
+          <div class="tradition-card__desc">{{ t.description | striptags }}</div>
         {% endif %}
       </div>
 
@@ -27,7 +27,7 @@
 
       <div class="tradition-card__foot">
         <span class="mono" style="color:var(--green);font-weight:700;font-size:15px">{{ t.brigade_count }}</span>
-        <span style="color:var(--ghost);font-size:11px;text-transform:uppercase;letter-spacing:0.08em">з'єднань</span>
+        <span style="color:var(--ghost);font-size:11px;text-transform:uppercase;letter-spacing:0.08em">{{ t.brigade_count | uk_brigade_word }}</span>
       </div>
     </a>
   {% else %}

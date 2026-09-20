@@ -68,6 +68,12 @@ a:hover { color: var(--green-hover); }
 .search::before { content: "⌕"; position: absolute; left: 11px; color: var(--ghost); font-size: 13px; }
 .search input { width: 210px; background: #fff; border: 1px solid var(--input); color: var(--text); padding: 8px 12px 8px 28px; font-size: 13px; outline: none; border-radius: 2px; }
 
+.search--page { margin-bottom: 18px; }
+.search--page input { width: 100%; max-width: 360px; }
+
+.search--inline { margin-right: auto; }
+.search--inline input { width: 240px; }
+
 .btn-primary { display: inline-flex; align-items: center; gap: 7px; background: var(--green); border: none; color: #fff; font-weight: 600; font-size: 13px; padding: 9px 15px; cursor: pointer; border-radius: 2px; clip-path: polygon(0 0,100% 0,100% 100%,7px 100%,0 calc(100% - 7px)); }
 .btn-primary:hover { background: var(--green-hover); color: #fff; }
 .btn-ghost { background: #fff; border: 1px solid var(--input); color: var(--muted); font-weight: 600; font-size: 13px; padding: 10px 18px; cursor: pointer; border-radius: 2px; }
@@ -162,13 +168,46 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .tile--frozen .tile__mark { background: var(--ghost); }
 
 /* ---------- Corps filter (/zsu/{slug}) ---------- */
-.corps-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
-.corps-filter__item { flex: 0 0 130px; width: 130px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; cursor: pointer; background: none; border: 1px solid var(--line-2); border-radius: 4px; padding: 12px 8px; transition: border-color .15s, background .15s; color: inherit; font-family: inherit; }
+.corps-filter { display: flex; flex-wrap: wrap; gap: 10px; }
+.corps-filter__item { flex: 0 0 130px; width: 130px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; cursor: pointer; background: none; border: 1px solid var(--line-2); border-radius: 4px; padding: 12px 8px; transition: border-color .15s, background .15s; color: inherit; font-family: inherit; box-sizing: border-box; }
 .corps-filter__item:hover { border-color: var(--green); }
 .corps-filter__item.is-active { border-color: var(--green); background: var(--tint-bg); }
 .corps-filter__emblem { flex: none; width: 44px; height: 53px; display: grid; place-items: center; overflow: hidden; }
 .corps-filter__emblem img { width: 100%; height: 100%; object-fit: contain; }
 .corps-filter__name { font-weight: 600; font-size: 12px; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.corps-filter__item-wrap { position: relative; flex: 0 0 130px; }
+.corps-filter__item-wrap .corps-filter__item { width: 100%; }
+.corps-filter__goto { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; font-size: 13px; line-height: 1; text-decoration: none; }
+.corps-filter__goto:hover { filter: brightness(1.1); }
+
+/* Широка прямокутна плашка для "окремих сил" (напр. Морська авіація/Морська
+   піхота у ВМС) — емблема → напис → стрілка переходу в один рядок, замість
+   квадратної картки, як в "Оперативних командуваннях". Власна сітка
+   repeat(3, 1fr) (не пов'язана з .corps-filter, який лишається flex-wrap
+   із фіксованою шириною плашки для "Органів військового управління" й
+   "Армійських корпусів") — тому в цьому рядку рівно 3 плашки на всю ширину. */
+.corps-filter--sm { display: grid; grid-template-columns: repeat(3, 1fr); }
+.corps-filter--sm .corps-filter__item-wrap { position: static; width: 100%; display: flex; align-items: stretch; gap: 8px; }
+.corps-filter--sm .corps-filter__item { flex-direction: row; flex: 1 1 auto; width: auto; min-width: 0; align-items: center; justify-content: flex-start; text-align: left; gap: 10px; padding: 8px 12px; border-radius: 4px; }
+.corps-filter--sm .corps-filter__emblem { width: 30px; height: 36px; }
+.corps-filter--sm .corps-filter__name { display: block; font-size: 12.5px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.corps-filter--sm .corps-filter__goto { position: static; flex: 0 0 36px; width: 36px; height: auto; align-self: stretch; border-radius: 4px; font-size: 15px; }
+
+/* ---------- Права колонка сторінки роду військ (/zsu/{slug}) ----------
+   Єдиний власник вертикального ритму — flex-колонка з `gap`.
+   У flex-контейнері margin-и не колапсять і не сумуються з gap, тому
+   відступ між секціями (лічильник → Окремі сили → Оперативні командування →
+   Армійські корпуси → картки з'єднань) завжди рівно --branch-gap,
+   незалежно від того, які секції відрендерились. Тому всередині колонки
+   всі власні вертикальні margin-и обнулені; єдиний локальний відступ —
+   8px між заголовком секції і рядком її плашок. */
+.branch-side { --branch-gap: 18px; display: flex; flex-direction: column; gap: var(--branch-gap); }
+.branch-side > .page-eyebrow { margin: 0; }
+.branch-side__section > .page-eyebrow { margin: 0 0 8px; }
+.branch-side .corps-filter { margin: 0; }
+/* .divider має margin-top: 6px для відбивки груп усередині сітки — у першої
+   групи він додавався б до gap секції, тому там його знімаємо. */
+.branch-side .grid-cards > .divider:first-child { margin-top: 0; }
 
 /* ---------- Equipment card ---------- */
 .equipment-card__desc { color: var(--muted); font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; }
@@ -288,6 +327,9 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 a.timeline__node { display: block; color: inherit; cursor: pointer; }
 a.timeline__node:hover .diamond { border-color: var(--green); }
 a.timeline__node:hover .name { color: var(--ink); }
+.timeline__node.stat-num { display: block; cursor: pointer; border-bottom: none; }
+.timeline__node.stat-num:hover .diamond, .timeline__node.stat-num:focus .diamond { border-color: var(--green); }
+.timeline__node.stat-num:hover .name, .timeline__node.stat-num:focus .name { color: var(--ink); }
 
 .status { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; padding: 4px 10px; border-radius: 2px; }
 .status--win { color: #03815B; background: #E6F4EE; }
@@ -323,6 +365,35 @@ a.timeline__node:hover .name { color: var(--ink); }
 .bar-track { background: var(--line-2); border-radius: 2px; overflow: hidden; }
 .bar-fill { display: block; height: 8px; border-radius: 2px; background: var(--green); }
 
+.stats-branch-table th, .stats-branch-table td { text-align: center; }
+.stats-branch-table th:first-child, .stats-branch-table td.cell-name { text-align: left; }
+.stats-branch-table td.num-mono { text-align: center; }
+.stat-num { position: relative; display: inline-block; cursor: default; border-bottom: 1px dotted var(--faint); }
+.stat-num__tip {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 4px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-family: var(--sans, inherit);
+}
+.stat-num__tip b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #C8D0DC; margin-bottom: 6px; font-weight: 700; }
+.stat-num__tip ul { list-style: none; margin: 0; padding: 0; }
+.stat-num__tip li { font-size: 13px; line-height: 1.5; font-weight: 400; color: #fff; }
+.stat-num__tip.is-open { visibility: visible; opacity: 1; pointer-events: auto; }
+
 /* ---------- Footer ---------- */
 footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: #B7BEC9; font-size: 11px; }
 footer .mono { font-family: var(--mono); }
@@ -330,11 +401,12 @@ footer .mono { font-family: var(--mono); }
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {
   .topbar__inner { gap: 14px; }
-  .nav, .topbar__right .search, .topbar__right .btn-primary { display: none; }
+  .nav, .topbar__right .btn-primary { display: none; }
   .menu-toggle { display: grid; }
   .mobile-menu.is-open { display: block; }
   main { padding: 24px 16px 64px; }
   .cols-2, .cols-2--branch { grid-template-columns: 1fr; }
+  .corps-filter--sm { grid-template-columns: 1fr; }
   .timeline__node { min-width: 140px; }
 }
 

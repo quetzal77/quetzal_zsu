@@ -8,6 +8,7 @@ from app.auth import require_login
 from app.database import get_db
 from app.sanitize import sanitize_html
 from app.templates import templates
+from app.validation import validate_date
 
 router = APIRouter(prefix="/equipment", tags=["equipment"])
 
@@ -69,6 +70,7 @@ def create_equipment(
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    adopted_date = validate_date(adopted_date, "Дата прийняття на озброєння")
     try:
         cur = db.execute(
             """INSERT INTO equipment (name, description, equipment_type_id, photo, adopted_date)
@@ -78,7 +80,7 @@ def create_equipment(
                 sanitize_html(description) or None,
                 _optional_int(equipment_type_id),
                 photo or None,
-                adopted_date or None,
+                adopted_date,
             ),
         )
         db.commit()
@@ -96,6 +98,8 @@ def equipment_detail(equipment_id: int, request: Request, db: sqlite3.Connection
            WHERE e.equipment_id = ?""",
         (equipment_id,),
     ).fetchone()
+    if not equipment:
+        raise HTTPException(status_code=404)
 
     brigades = db.execute(
         """SELECT b.brigade_id, b.name, b.emblem_file, mb.branch_name
@@ -122,6 +126,8 @@ def edit_equipment_form(
     equipment = db.execute(
         "SELECT * FROM equipment WHERE equipment_id = ?", (equipment_id,)
     ).fetchone()
+    if not equipment:
+        raise HTTPException(status_code=404)
 
     brigades = db.execute(
         """SELECT b.brigade_id, b.name
@@ -158,8 +164,9 @@ def update_equipment(
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
+    adopted_date = validate_date(adopted_date, "Дата прийняття на озброєння")
     try:
-        db.execute(
+        cur = db.execute(
             """UPDATE equipment SET
                    name = ?, description = ?, equipment_type_id = ?, photo = ?, adopted_date = ?,
                    updated_at = CURRENT_TIMESTAMP
@@ -169,10 +176,12 @@ def update_equipment(
                 sanitize_html(description) or None,
                 _optional_int(equipment_type_id),
                 photo or None,
-                adopted_date or None,
+                adopted_date,
                 equipment_id,
             ),
         )
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404)
         db.commit()
     except sqlite3.IntegrityError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -186,7 +195,9 @@ def delete_equipment(
     _user: str = Depends(require_login),
 ):
     db.execute("DELETE FROM brigade_equipment WHERE equipment_id = ?", (equipment_id,))
-    db.execute("DELETE FROM equipment WHERE equipment_id = ?", (equipment_id,))
+    cur = db.execute("DELETE FROM equipment WHERE equipment_id = ?", (equipment_id,))
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404)
     db.commit()
     return RedirectResponse(url="/equipment", status_code=303)
 
