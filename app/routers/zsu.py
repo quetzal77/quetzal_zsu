@@ -41,9 +41,9 @@ STRUCTURE = [
         "items": [
             {"slug": "ground-forces", "data_date": "жовтень 2026", "mark": "СВ", "name": "Сухопутні війська",
              "icon": "forces/ground_forces_patch.png"},
-            {"slug": "air-force", "data_date": "жовтень 2026", "mark": "ПС", "name": "Повітряні сили",
+            {"slug": "air-force", "data_date": "вересень 2026", "mark": "ПС", "name": "Повітряні сили",
              "icon": "forces/air_force_patch.png"},
-            {"slug": "navy", "data_date": "жовтень 2026", "mark": "ВМС", "name": "Військово-морські сили",
+            {"slug": "navy", "data_date": "вересень 2026", "mark": "ВМС", "name": "Військово-морські сили",
              "icon": "forces/vms_patch.png"},
         ],
     },
