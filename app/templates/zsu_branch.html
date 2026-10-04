@@ -5,7 +5,7 @@
 
 <div class="detail-head">
   <div class="detail-head__main">
-    <h1>{{ item.name }}</h1>
+    <h1>{{ item.name }}{% if item.data_date %} <span class="data-date">(дані станом на {{ item.data_date }})</span>{% endif %}</h1>
     {% if item.hint %}<div class="sub">{{ item.hint }}</div>{% endif %}
   </div>
 </div>

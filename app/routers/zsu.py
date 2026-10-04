@@ -29,7 +29,7 @@ STRUCTURE = [
     {
         "title": "Загальна структура",
         "items": [
-            {"slug": "general-staff", "mark": "ГШ", "name": "Генеральний штаб Збройних Сил України",
+            {"slug": "general-staff", "data_date": "вересень 2026", "mark": "ГШ", "name": "Генеральний штаб Збройних Сил України",
              "hint": "Орган стратегічного управління",
              "icon": "forces/General_Staff_of_the_Ukrainian_Armed_Forces_Patch.png"},
             {"slug": "joint-forces-command", "mark": "КОС", "name": "Командування об’єднаних сил ЗС України",
@@ -39,32 +39,32 @@ STRUCTURE = [
     {
         "title": "Види ЗСУ",
         "items": [
-            {"slug": "ground-forces", "mark": "СВ", "name": "Сухопутні війська",
+            {"slug": "ground-forces", "data_date": "жовтень 2026", "mark": "СВ", "name": "Сухопутні війська",
              "icon": "forces/ground_forces_patch.png"},
-            {"slug": "air-force", "mark": "ПС", "name": "Повітряні сили",
+            {"slug": "air-force", "data_date": "жовтень 2026", "mark": "ПС", "name": "Повітряні сили",
              "icon": "forces/air_force_patch.png"},
-            {"slug": "navy", "mark": "ВМС", "name": "Військово-морські сили",
+            {"slug": "navy", "data_date": "жовтень 2026", "mark": "ВМС", "name": "Військово-морські сили",
              "icon": "forces/vms_patch.png"},
         ],
     },
     {
         "title": "Окремі роди сил ЗСУ",
         "items": [
-            {"slug": "special-operations-forces", "mark": "ССО", "name": "Сили спеціальних операцій",
+            {"slug": "special-operations-forces", "data_date": "серпень 2026", "mark": "ССО", "name": "Сили спеціальних операцій",
              "icon": "forces/sso_patch.png"},
-            {"slug": "territorial-defense-forces", "mark": "СТрО", "name": "Сили територіальної оборони",
+            {"slug": "territorial-defense-forces", "data_date": "вересень 2026", "mark": "СТрО", "name": "Сили територіальної оборони",
              "icon": "forces/tro_patch.png"},
             {"slug": "logistics-forces", "mark": "СЛ", "name": "Сили логістики"},
             {"slug": "support-forces", "mark": "СП", "name": "Сили підтримки"},
             {"slug": "medical-forces", "mark": "МС", "name": "Медичні сили"},
-            {"slug": "unmanned-systems-forces", "mark": "СБС", "name": "Сили безпілотних систем",
+            {"slug": "unmanned-systems-forces", "data_date": "серпень 2026", "mark": "СБС", "name": "Сили безпілотних систем",
              "icon": "forces/sbs_patch.png"},
         ],
     },
     {
         "title": "Окремі роди військ ЗСУ",
         "items": [
-            {"slug": "air-assault-troops", "mark": "ДШВ", "name": "Десантно-штурмові війська",
+            {"slug": "air-assault-troops", "data_date": "серпень 2026", "mark": "ДШВ", "name": "Десантно-штурмові війська",
              "icon": "forces/dshv_patch.png"},
             {"slug": "signal-cyber-troops", "mark": "ВЗК", "name": "Війська зв’язку та кібербезпеки"},
         ],

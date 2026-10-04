@@ -416,3 +416,5 @@ footer .mono { font-family: var(--mono); }
 .modal { background: var(--card); border: 1px solid var(--line); border-radius: 4px; max-width: 420px; width: 100%; padding: 22px; box-shadow: var(--shadow-h); }
 .modal__message { margin: 0 0 20px; font-size: 14px; line-height: 1.5; color: var(--ink); white-space: pre-line; }
 .modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+.data-date { font-size: 0.5em; font-weight: 400; color: var(--muted, #888); white-space: nowrap; }
