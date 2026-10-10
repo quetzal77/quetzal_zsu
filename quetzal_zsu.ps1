@@ -22,11 +22,18 @@ function Write-Step($msg) {
 }
 
 function Get-PythonCommand {
-    foreach ($candidate in @("python", "py")) {
+    # Get-Command лише знаходить файл у PATH, але це може бути битий запис або
+    # заглушка Microsoft Store — тому кандидата перевіряємо реальним запуском.
+    foreach ($candidate in @("python", "py", "python3")) {
         $found = Get-Command $candidate -ErrorAction SilentlyContinue
-        if ($found) { return $candidate }
+        if (-not $found) { continue }
+        try {
+            & $candidate --version *> $null
+            if ($LASTEXITCODE -eq 0) { return $candidate }
+        } catch { }
     }
-    Write-Host "Python не знайдено в PATH. Встанови Python 3.12+ і повтори." -ForegroundColor Red
+    Write-Host "Працюючий Python не знайдено (python/py у PATH відсутні або не запускаються)." -ForegroundColor Red
+    Write-Host "Встанови Python 3.12+ з python.org (з опцією 'Add to PATH') і повтори." -ForegroundColor Red
     exit 1
 }
 

@@ -163,7 +163,7 @@ def _corps_list_for(db: sqlite3.Connection, brigades) -> list:
         f"""SELECT corps_id, corps_name, emblem_file, command_id
             FROM army_corps
             WHERE corps_id IN ({placeholders})
-            ORDER BY corps_name COLLATE UKRAINIAN""",
+            ORDER BY CAST(corps_name AS INTEGER), corps_name COLLATE UKRAINIAN""",
         tuple(corps_ids),
     ).fetchall()
 
