@@ -32,6 +32,7 @@ def stats(
             "counts": counts,
             "branch_table": branch_table,
             "brigades_by_year": brigades_by_year,
+            "units_by_year": _units_by_year(db),
         },
     )
 
@@ -107,6 +108,45 @@ def _brigade_sort_key(name: str):
         return (0, int(name))
     except ValueError:
         return (1, name)
+
+
+def _unit_word(count: int) -> str:
+    """Ukrainian plural form of "підрозділ" for the given count."""
+    n = abs(count) % 100
+    n1 = n % 10
+    if 11 <= n <= 14:
+        return "підрозділів"
+    if n1 == 1:
+        return "підрозділ"
+    if 2 <= n1 <= 4:
+        return "підрозділи"
+    return "підрозділів"
+
+
+def _units_by_year(db: sqlite3.Connection) -> list[dict]:
+    """Рік заснування підрозділу (formed_date) — незалежно від того, коли він
+    став бригадою; враховуються всі типи з'єднань."""
+    rows = db.execute(
+        """SELECT b.name AS brigade_name,
+                  strftime('%Y', b.formed_date) AS year
+           FROM brigades b
+           WHERE b.formed_date IS NOT NULL"""
+    ).fetchall()
+
+    years: dict[str, list[str]] = {}
+    for r in rows:
+        if r["year"]:
+            years.setdefault(r["year"], []).append(r["brigade_name"])
+
+    return [
+        {
+            "year": year,
+            "count": len(names),
+            "word": _unit_word(len(names)),
+            "names": sorted(names, key=_brigade_sort_key),
+        }
+        for year, names in sorted(years.items(), key=lambda kv: kv[0])
+    ]
 
 
 def _brigades_by_year(db: sqlite3.Connection) -> list[dict]:

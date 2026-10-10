@@ -41,6 +41,36 @@
 </div>
 
 <div class="panel">
+  <div class="panel__head">Підрозділи за роком заснування</div>
+  <div class="panel__body">
+    {% if units_by_year %}
+    <div class="timeline" id="units-by-year">
+      <div class="timeline__track">
+        {% for row in units_by_year %}
+        <div class="timeline__node stat-num" tabindex="0">
+          <div class="line">
+            <span class="diamond"></span>
+            <span class="bar"></span>
+          </div>
+          <div class="period">{{ row.year }}</div>
+          <div class="name">{{ row.count }} {{ row.word }}</div>
+          <span class="stat-num__tip">
+            <b>{{ row.year }} — {{ row.count }} {{ row.word }}</b>
+            <ul>
+              {% for item in row.names %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty">Немає даних про дати заснування підрозділів.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
   <div class="panel__head">З'єднання за родом військ і типом</div>
   <div class="panel__body">
     <div class="table-wrap">
