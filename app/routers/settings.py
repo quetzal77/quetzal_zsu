@@ -82,12 +82,21 @@ _LOOKUP_TABLES = {
         "label": "Типи родів військ", "singular": "тип роду військ",
         "extra_cols": [
             {"col": "collar_emblem_file", "label": "Комірна емблема"},
-            {"col": "military_branch_id", "label": "Рід військ", "type": "branch"},
-            {"col": "details_id", "label": "Деталі", "type": "branch-details"},
+            {"col": "military_branch_id", "label": "Рід військ 1", "type": "branch"},
+            {"col": "details_id", "label": "Деталі 1", "type": "branch-details"},
+            # Друга сила: той самий тип може бути плашкою "Окремих сил" ще в
+            # одному роді військ, з власними деталями (напр. Зенітні ракетні
+            # війська і в Повітряних силах, і в Сухопутних).
+            {"col": "extra_branch_id", "label": "Рід військ 2", "type": "branch"},
+            {"col": "extra_details_id", "label": "Деталі 2", "type": "branch-details"},
             {"col": "is_force", "label": "Сила", "type": "checkbox"},
         ],
-        "wide": True,  # 6 елементів (назва + 4 поля + дії) — потребує ширшого гріда, ніж стандартні 4 колонки
-        "grid_cols": 6,
+        "wide": True,  # 8 елементів (назва + 6 полів + дії) — потребує ширшого гріда, ніж стандартні 4 колонки
+        "grid_cols": 8,
+        # Назва + емблема + 4 селекти рівними частками; чекбокс «Сила» і кнопки
+        # мають власну вузьку фіксовану ширину, інакше вони розтягуються на 1fr
+        # і між чекбоксом та «Зберегти» виходить великий проміжок.
+        "grid_template": "repeat(6, 1fr) 70px 110px",
         "dependents": [
             {"table": "brigades", "fk_col": "troop_type_id", "name_col": "name", "label": "бригад"},
         ],
@@ -232,6 +241,7 @@ def _settings_context(db: sqlite3.Connection) -> dict:
             "extra_cols": config.get("extra_cols", []),
             "wide": config.get("wide", False),
             "grid_cols": config.get("grid_cols", 4),
+            "grid_template": config.get("grid_template"),
         }
         for slug, config in _LOOKUP_TABLES.items()
     ]
@@ -429,6 +439,8 @@ def create_lookup_item(
     details_id: Optional[str] = Form(None),
     is_force: Optional[str] = Form(None),
     command_id: Optional[str] = Form(None),
+    extra_branch_id: Optional[str] = Form(None),
+    extra_details_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -442,6 +454,8 @@ def create_lookup_item(
         "details_id": details_id,
         "is_force": is_force,
         "command_id": command_id,
+        "extra_branch_id": extra_branch_id,
+        "extra_details_id": extra_details_id,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)
@@ -473,6 +487,8 @@ def update_lookup_item(
     details_id: Optional[str] = Form(None),
     is_force: Optional[str] = Form(None),
     command_id: Optional[str] = Form(None),
+    extra_branch_id: Optional[str] = Form(None),
+    extra_details_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
 ):
@@ -486,6 +502,8 @@ def update_lookup_item(
         "details_id": details_id,
         "is_force": is_force,
         "command_id": command_id,
+        "extra_branch_id": extra_branch_id,
+        "extra_details_id": extra_details_id,
     }
     extra_cols = [ec["col"] for ec in config.get("extra_cols", [])]
     values = _extra_col_values(config, form_values)

@@ -116,7 +116,10 @@ python -m uvicorn app.main:app --reload
   на це посилаються і `brigades.territorial_command_id`, і `army_corps.command_id`
 - **`troop_types`** — довідник типів родів військ; FK на `military_branches` (рід військ) і
   `military_branch_details`; `is_force` — та сама позначка «сила», що й у `territorial_commands`;
-  редагується на плашці «Типи родів військ» в `/settings`
+  `extra_branch_id` + `extra_details_id` — друга «сила»: той самий тип показується плашкою «Окремих
+  сил» ще й у другому роді військ зі своїми деталями (напр. Зенітні ракетні війська у Повітряних
+  силах і в Сухопутних); саб-роути `/zsu/{slug}/type/{id}` і `/details/{id}` обирають деталі за тим
+  зв'язком, що збігається з родом військ сторінки; редагується на плашці «Типи родів військ» в `/settings`
 - **`unit_types`** — довідник типів з'єднань (Бригада / Полк / Батальйон...), FK з `brigades.unit_type_id`
 - **`battles`** — FK на `locations`; `CHECK(start_date <= end_date)`
 - **`brigade_battles`**, **`brigade_equipment`**, **`brigade_traditions`** — junction-таблиці з повними FK на обидва боки

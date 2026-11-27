@@ -73,7 +73,9 @@ CREATE TABLE troop_types (
     collar_emblem_file   TEXT, -- посилання/ім'я файлу комірної емблеми
     military_branch_id   INTEGER REFERENCES military_branches (branch_id), -- рід військ, якому належить тип
     details_id           INTEGER REFERENCES military_branch_details (details_id),
-    is_force              INTEGER NOT NULL DEFAULT 0  -- позначка "сила", як у territorial_commands
+    is_force              INTEGER NOT NULL DEFAULT 0,  -- позначка "сила", як у territorial_commands
+    extra_branch_id      INTEGER REFERENCES military_branches (branch_id), -- друга "сила": ще один рід військ, де тип показується плашкою
+    extra_details_id     INTEGER REFERENCES military_branch_details (details_id) -- деталі для другої сили
 );
 
 CREATE TABLE unit_types (

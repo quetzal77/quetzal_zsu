@@ -70,7 +70,7 @@
       <div style="max-height:{{ lu.list_max_height or ('320px' if lu.wide else '230px') }};overflow-y:auto;margin:-6px -6px 16px;padding:6px">
         {% for item in lu.rows %}
           {% if lu.wide %}
-          <div class="lookup-grid-row" style="grid-template-columns:repeat({{ lu.grid_cols }},1fr)">
+          <div class="lookup-grid-row" style="grid-template-columns:{{ lu.grid_template or ("repeat(" ~ lu.grid_cols ~ ",1fr)") }}">
             <input name="name" form="{{ lu.slug }}-edit-{{ item.id }}" required
                    value="{{ item.name }}" class="lookup-grid-row__name"
                    style="font-size:13px;padding:6px 10px;border:1px solid var(--input);border-radius:2px">
@@ -109,7 +109,7 @@
 
       {% if lu.wide %}
       <form method="post" action="/settings/lookups/{{ lu.slug }}" id="{{ lu.slug }}-create" class="lookup-grid-row"
-            style="padding:0;grid-template-columns:repeat({{ lu.grid_cols }},1fr)">
+            style="padding:0;grid-template-columns:{{ lu.grid_template or ("repeat(" ~ lu.grid_cols ~ ",1fr)") }}">
         <input name="name" form="{{ lu.slug }}-create" required placeholder="Нова назва" class="lookup-grid-row__name"
                style="font-size:13px;padding:8px 10px;border:1px solid var(--input);border-radius:2px">
         {% for ec in lu.extra_cols %}

@@ -122,6 +122,8 @@ def _find_item(slug: str) -> dict:
 
 _BRIGADES_QUERY = """
     SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
+           b.formed_date, b.brigade_date,
+           ac.corps_name, l.city_name,
            b.corps_id, b.territorial_command_id, b.troop_type_id,
            tt.type_name AS troop_type_name,
            tt.collar_emblem_file AS troop_type_collar_file,
@@ -138,6 +140,8 @@ _BRIGADES_QUERY = """
     FROM brigades b
     LEFT JOIN troop_types tt ON b.troop_type_id = tt.type_id
     LEFT JOIN territorial_commands tc ON b.territorial_command_id = tc.command_id
+    LEFT JOIN army_corps ac ON b.corps_id = ac.corps_id
+    LEFT JOIN locations l ON b.location_id = l.location_id
     WHERE {where}
     ORDER BY
         CASE WHEN tt.type_name IS NULL THEN 2
@@ -226,14 +230,24 @@ def zsu_branch(slug: str, request: Request, db: sqlite3.Connection = Depends(get
     troop_type_ids = {b["troop_type_id"] for b in brigades if b["troop_type_id"]}
     if troop_type_ids and branch:
         placeholders = ",".join("?" * len(troop_type_ids))
+        # Тип роду військ може бути "силою" в двох родах військ: основному
+        # (military_branch_id + details_id) і додатковому (extra_branch_id +
+        # extra_details_id) — напр. Зенітні ракетні війська і в Повітряних силах,
+        # і в Сухопутних. Тому беремо обидва зв'язки, кожен зі своїми деталями.
         troop_type_forces = db.execute(
             f"""SELECT tt.type_id, tt.type_name, tt.details_id, mbd.patch_file, mbd.details_name
                 FROM troop_types tt
                 LEFT JOIN military_branch_details mbd ON tt.details_id = mbd.details_id
                 WHERE tt.type_id IN ({placeholders})
                   AND tt.military_branch_id = ? AND tt.is_force = 1
-                ORDER BY tt.type_name COLLATE UKRAINIAN""",
-            (*troop_type_ids, branch["branch_id"]),
+                UNION ALL
+                SELECT tt.type_id, tt.type_name, tt.extra_details_id, mbd.patch_file, mbd.details_name
+                FROM troop_types tt
+                LEFT JOIN military_branch_details mbd ON tt.extra_details_id = mbd.details_id
+                WHERE tt.type_id IN ({placeholders})
+                  AND tt.extra_branch_id = ? AND tt.is_force = 1
+                ORDER BY type_name COLLATE UKRAINIAN""",
+            (*troop_type_ids, branch["branch_id"], *troop_type_ids, branch["branch_id"]),
         ).fetchall()
         force_raw += [
             {"kind": "troop-type", "id": t["type_id"], "name": t["type_name"],
@@ -301,14 +315,19 @@ def zsu_branch_troop_type(
         (parent_item["name"],),
     ).fetchone()
 
+    # Деталі залежать від того, через який зв'язок тип прив'язаний до цього роду
+    # військ: основний (details_id) чи додатковий (extra_details_id).
+    branch_id = branch["branch_id"] if branch else -1
     troop_type = db.execute(
         """SELECT tt.type_id, tt.type_name, tt.is_force, mbd.*, l.city_name, r.region_name
            FROM troop_types tt
-           LEFT JOIN military_branch_details mbd ON tt.details_id = mbd.details_id
+           LEFT JOIN military_branch_details mbd
+                  ON mbd.details_id = CASE WHEN tt.military_branch_id = :b
+                                           THEN tt.details_id ELSE tt.extra_details_id END
            LEFT JOIN locations l ON mbd.hq_location_id = l.location_id
            LEFT JOIN regions r ON l.region_id = r.region_id
-           WHERE tt.type_id = ? AND tt.military_branch_id = ?""",
-        (type_id, branch["branch_id"] if branch else -1),
+           WHERE tt.type_id = :t AND (tt.military_branch_id = :b OR tt.extra_branch_id = :b)""",
+        {"t": type_id, "b": branch_id},
     ).fetchone()
     if not troop_type or not troop_type["is_force"]:
         raise HTTPException(status_code=404)
@@ -434,8 +453,11 @@ def zsu_branch_details(
 
     troop_type_ids = [
         r["type_id"] for r in db.execute(
-            "SELECT type_id FROM troop_types WHERE details_id = ? AND military_branch_id = ? AND is_force = 1",
-            (details_id, branch_id),
+            """SELECT type_id FROM troop_types
+               WHERE is_force = 1
+                 AND ((details_id = ? AND military_branch_id = ?)
+                      OR (extra_details_id = ? AND extra_branch_id = ?))""",
+            (details_id, branch_id, details_id, branch_id),
         ).fetchall()
     ]
     command_ids = [

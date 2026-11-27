@@ -56,7 +56,13 @@
   </div>
 
   <div class="branch-side">
-    <div class="page-eyebrow">З'єднань <span style="color:#B7BEC9">— {{ brigades|length }}</span></div>
+    <div class="branch-side__top">
+      <div class="page-eyebrow">З'єднань <span style="color:#B7BEC9">— <span id="brigade-count">{{ brigades|length }}</span></span></div>
+      <div class="view-toggle" id="layout-toggle">
+        <button type="button" data-layout="cards" class="is-active">▦ Картки</button>
+        <button type="button" data-layout="compact">☰ Компактно</button>
+      </div>
+    </div>
     {% if force_list %}
     <div class="branch-side__section">
       <div class="page-eyebrow">Окремі сили {{ item.mark }}</div>
@@ -143,6 +149,37 @@
         <div class="empty" style="grid-column:1/-1">З'єднання ще не додано.</div>
       {% endfor %}
     </div>
+    <div class="table-wrap" id="brigade-table-wrap">
+      <table class="brigades-table" id="brigade-table">
+        <thead><tr><th>№</th><th>Назва</th><th>Корпус</th><th>ППД</th><th>Рік заснування</th><th>Прапор</th></tr></thead>
+        <tbody>
+          {% for b in brigades %}
+            {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
+            <tr class="table-group"><td colspan="6">{{ b.troop_type_name or 'Без типу військ' }}</td></tr>
+            {% endif %}
+            <tr class="brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" data-troop-type-id="{{ b.troop_type_id or '' }}" data-details-id="{{ b.force_details_id or '' }}" onclick="location.href='/brigades/{{ b.brigade_id }}'">
+              <td><span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
+                {% if b.emblem_file %}<img src="/static/img/{{ b.emblem_file }}" alt="">{% else %}{{ b.name.split(' ')[0] if b.name else '—' }}{% endif %}
+              </span></td>
+              <td class="cell-name">
+                <b>{{ b.name }}</b>
+                {% if b.honorific_name %}<div class="honorific-inline"><span class="honorific-badge card__honorific" title="{{ b.honorific_name }}">{{ b.honorific_name }}</span></div>{% endif %}
+              </td>
+              <td title="{{ b.corps_name or '' }}">{{ (b.corps_name | replace('-й армійський корпус', ' АК') | replace('-й корпус морської піхоти', ' КМП') | replace('-й корпус швидкого реагування Десантно-штурмових військ', ' КШР') | replace('-й корпус Десантно-штурмових військ', ' КДШВ') | replace('-й корпус НГУ «Азов»', ' КНГУ') | replace('-й корпус НГУ «Хартія»', ' КНГУ')) if b.corps_name else '—' }}</td>
+              <td>{{ b.city_name or '—' }}</td>
+              <td class="num-mono">{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</td>
+              <td>
+                <span class="flag {{ '' if b.flag_date else 'flag--empty' }}" title="{{ 'Бойовий прапор ЗСУ вручено' if b.flag_date else 'Прапор не вручено' }}">
+                  {% if b.flag_date %}<img src="/static/img/zsu-ensign.svg" alt="">{% endif %}
+                </span>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="empty">З'єднання ще не додано.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -151,17 +188,37 @@
 (function () {
   var cards = document.querySelectorAll('#brigade-cards .brigade-row');
   var dividers = document.querySelectorAll('#brigade-cards > .divider');
+  var tableRows = document.querySelectorAll('#brigade-table .brigade-row');
+  var groupRows = document.querySelectorAll('#brigade-table .table-group');
   var corpsSection = document.getElementById('corps-section');
   var corpsButtons = Array.prototype.slice.call(document.querySelectorAll('#corps-filter .corps-filter__item'));
   var filters = [];
   var corpsFilterState = null; // filter-стан "corpsId" — скидається, коли активний корпус ховається
 
+  var countEl = document.getElementById('brigade-count');
+
   function apply() {
+    var shown = 0;
     cards.forEach(function (card) {
       var visible = filters.every(function (f) {
         return !f.activeId || card.dataset[f.dataKey] === f.activeId;
       });
       card.style.display = visible ? '' : 'none';
+      if (visible) shown++;
+    });
+    if (countEl) countEl.textContent = shown;
+    // Таблична версія: ті самі умови, що й для карток (рядки в тому ж порядку).
+    tableRows.forEach(function (row, i) {
+      row.style.display = cards[i] && cards[i].style.display === 'none' ? 'none' : '';
+    });
+    groupRows.forEach(function (group) {
+      var el = group.nextElementSibling;
+      var hasVisible = false;
+      while (el && !el.classList.contains('table-group')) {
+        if (el.style.display !== 'none') { hasVisible = true; break; }
+        el = el.nextElementSibling;
+      }
+      group.style.display = hasVisible ? '' : 'none';
     });
     dividers.forEach(function (divider) {
       var el = divider.nextElementSibling;
@@ -263,4 +320,21 @@
 })();
 </script>
 {% endif %}
+<script>
+(function () {
+  var side = document.querySelector('.branch-side');
+  var buttons = document.querySelectorAll('#layout-toggle button');
+  function setLayout(layout, save) {
+    side.classList.toggle('is-compact', layout === 'compact');
+    buttons.forEach(function (b) { b.classList.toggle('is-active', b.dataset.layout === layout); });
+    if (save) { try { localStorage.setItem('zsuBranchLayout', layout); } catch (e) {} }
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () { setLayout(b.dataset.layout, true); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('zsuBranchLayout'); } catch (e) {}
+  if (saved === 'compact') setLayout('compact', false);
+})();
+</script>
 {% endblock %}

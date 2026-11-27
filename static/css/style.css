@@ -209,6 +209,44 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
    групи він додавався б до gap секції, тому там його знімаємо. */
 .branch-side .grid-cards > .divider:first-child { margin-top: 0; }
 
+/* Перемикач вигляду: лічильник зліва, перемикач справа. */
+.branch-side__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.branch-side__top .page-eyebrow { margin: 0; }
+.branch-side__top .view-toggle button { padding: 6px 12px; }
+
+/* Компактний вигляд: плашки фільтрів — малі «чіпи» в один потік (емблема 20px
+   + назва), а з'єднання — таблиця замість карток. */
+#brigade-table-wrap { display: none; }
+.branch-side.is-compact #brigade-table-wrap { display: block; }
+.branch-side.is-compact #brigade-cards { display: none; }
+/* Щільна таблиця: менші відступи, емблема 24px, почесне ім'я в одному рядку з назвою. */
+#brigade-table { min-width: 0; }
+#brigade-table thead th { padding: 7px 10px; }
+#brigade-table td { padding: 3px 10px; font-size: 12.5px; }
+#brigade-table .table-group td { padding-top: 10px; padding-bottom: 4px; }
+#brigade-table .emblem--sm,
+#brigade-table .emblem--sm.has-image { width: 24px; height: 28px; font-size: 10px; }
+#brigade-table .cell-name { white-space: nowrap; }
+#brigade-table .cell-name b { font-size: 13px; }
+#brigade-table .honorific-inline { display: inline-block; margin-left: 8px; vertical-align: middle; }
+#brigade-table .honorific-inline .card__honorific { font-size: 11px; }
+#brigade-table .flag { width: 22px; height: 14px; }
+.branch-side.is-compact .corps-filter,
+.branch-side.is-compact .corps-filter--sm { display: flex; flex-wrap: wrap; gap: 6px; }
+.branch-side.is-compact .corps-filter__item-wrap,
+.branch-side.is-compact .corps-filter--sm .corps-filter__item-wrap { flex: 0 0 auto; width: auto; position: static; display: flex; gap: 4px; }
+.branch-side.is-compact .corps-filter__item,
+.branch-side.is-compact .corps-filter--sm .corps-filter__item { flex: 0 0 auto; width: auto; flex-direction: row; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 14px; }
+.branch-side.is-compact .corps-filter__emblem,
+.branch-side.is-compact .corps-filter--sm .corps-filter__emblem { width: 18px; height: 22px; }
+.branch-side.is-compact .corps-filter__name,
+.branch-side.is-compact .corps-filter--sm .corps-filter__name { display: block; font-size: 12px; white-space: nowrap; -webkit-line-clamp: unset; }
+.branch-side.is-compact .corps-filter__goto,
+.branch-side.is-compact .corps-filter--sm .corps-filter__goto { position: static; flex: 0 0 22px; width: 22px; height: 22px; align-self: center; border-radius: 50%; font-size: 12px; }
+.branch-side.is-compact .branch-side__section { display: flex; align-items: flex-start; gap: 10px; }
+.branch-side.is-compact .branch-side__section > .page-eyebrow { flex: 0 0 150px; margin: 6px 0 0; }
+.branch-side.is-compact .branch-side__section > .corps-filter { flex: 1; min-width: 0; }
+
 /* ---------- Equipment card ---------- */
 .equipment-card__desc { color: var(--muted); font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; }
 
