@@ -30,6 +30,7 @@
     <div class="panel">
       <div class="panel__head">Довідка про з'єднання</div>
       <dl class="spec">
+        <div class="row"><dt>Військова частина</dt><dd class="mono">{{ ('А' ~ brigade.military_unit_number) if brigade.military_unit_number else '—' }}</dd></div>
         <div class="row"><dt>Рід військ</dt><dd>{% if branch_zsu_slug %}<a class="spec-link" href="/zsu/{{ branch_zsu_slug }}">{{ brigade.branch_name }}</a>{% else %}{{ brigade.branch_name or '—' }}{% endif %}</dd></div>
         <div class="row"><dt>Тип військ</dt><dd>{{ brigade.type_name or '—' }}</dd></div>
         <div class="row"><dt>Тер. командування</dt><dd>{% if command_zsu_slug %}<a class="spec-link" href="/zsu/{{ command_zsu_slug }}">{{ brigade.command_name }}</a>{% else %}{{ brigade.command_name or '—' }}{% endif %}</dd></div>

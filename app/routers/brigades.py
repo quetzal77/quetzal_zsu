@@ -124,7 +124,7 @@ def list_brigades(
     region_id = _optional_int(region_id)
 
     query = """
-        SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date, b.brigade_date,
+        SELECT b.brigade_id, b.name, b.emblem_file, b.formed_date, b.flag_date, b.brigade_date, b.military_unit_number,
                mb.branch_name, ac.corps_name, l.city_name,
                (
                    SELECT bt.unit_name
@@ -201,6 +201,17 @@ def list_brigades(
     )
 
 
+def _validate_unit_number(value: Optional[str]) -> Optional[str]:
+    """Номер військової частини зберігається лише як 4 цифри; літера "А" не
+    пишеться в БД, а додається на сторінці (див. brigade_detail.html)."""
+    value = (value or "").strip()
+    if not value:
+        return None
+    if not (len(value) == 4 and value.isascii() and value.isdigit()):
+        raise HTTPException(status_code=400, detail="Номер військової частини — рівно 4 цифри (літера А додається автоматично)")
+    return value
+
+
 @router.get("/new")
 def new_brigade_form(
     request: Request, db: sqlite3.Connection = Depends(get_db), _user: str = Depends(require_login)
@@ -225,6 +236,7 @@ def create_brigade(
     formed_date: Optional[str] = Form(None),
     flag_date: Optional[str] = Form(None),
     brigade_date: Optional[str] = Form(None),
+    military_unit_number: Optional[str] = Form(None),
     unit_type_id: Optional[str] = Form(None),
     db: sqlite3.Connection = Depends(get_db),
     _user: str = Depends(require_login),
@@ -232,12 +244,13 @@ def create_brigade(
     formed_date = validate_date(formed_date, "Дата заснування")
     flag_date = validate_date(flag_date, "Дата вручення прапора")
     brigade_date = validate_date(brigade_date, "Дата присвоєння статусу бригади")
+    military_unit_number = _validate_unit_number(military_unit_number)
     try:
         cur = db.execute(
             """INSERT INTO brigades
                (name, description, emblem_file, military_branch_id, corps_id, territorial_command_id,
-                troop_type_id, location_id, formed_date, flag_date, brigade_date, unit_type_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                troop_type_id, location_id, formed_date, flag_date, brigade_date, military_unit_number, unit_type_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 name,
                 sanitize_html(description) or None,
@@ -250,6 +263,7 @@ def create_brigade(
                 formed_date,
                 flag_date,
                 brigade_date,
+                military_unit_number,
                 _optional_int(unit_type_id),
             ),
         )
@@ -363,6 +377,7 @@ def update_brigade(
         formed_date: Optional[str] = Form(None),
         flag_date: Optional[str] = Form(None),
         brigade_date: Optional[str] = Form(None),
+        military_unit_number: Optional[str] = Form(None),
         unit_type_id: Optional[str] = Form(None),
         photo_0: Optional[str] = Form(None),
         photo_1: Optional[str] = Form(None),
@@ -373,12 +388,13 @@ def update_brigade(
     formed_date = validate_date(formed_date, "Дата заснування")
     flag_date = validate_date(flag_date, "Дата вручення прапора")
     brigade_date = validate_date(brigade_date, "Дата присвоєння статусу бригади")
+    military_unit_number = _validate_unit_number(military_unit_number)
     try:
         cur = db.execute(
             """UPDATE brigades SET
                    name = ?, description = ?, emblem_file = ?, military_branch_id = ?, corps_id = ?,
                    territorial_command_id = ?, troop_type_id = ?, location_id = ?,
-                   formed_date = ?, flag_date = ?, brigade_date = ?, unit_type_id = ?, updated_at = CURRENT_TIMESTAMP
+                   formed_date = ?, flag_date = ?, brigade_date = ?, military_unit_number = ?, unit_type_id = ?, updated_at = CURRENT_TIMESTAMP
                WHERE brigade_id = ?""",
             (
                 name,
@@ -392,6 +408,7 @@ def update_brigade(
                 formed_date,
                 flag_date,
                 brigade_date,
+                military_unit_number,
                 _optional_int(unit_type_id),
                 brigade_id,
             ),

@@ -220,17 +220,27 @@ main { flex: 1; max-width: 1240px; width: 100%; margin: 0 auto; padding: 36px 28
 .branch-side.is-compact #brigade-table-wrap { display: block; }
 .branch-side.is-compact #brigade-cards { display: none; }
 /* Щільна таблиця: менші відступи, емблема 24px, почесне ім'я в одному рядку з назвою. */
-#brigade-table { min-width: 0; }
-#brigade-table thead th { padding: 7px 10px; }
-#brigade-table td { padding: 3px 10px; font-size: 12.5px; }
-#brigade-table .table-group td { padding-top: 10px; padding-bottom: 4px; }
-#brigade-table .emblem--sm,
-#brigade-table .emblem--sm.has-image { width: 24px; height: 28px; font-size: 10px; }
-#brigade-table .cell-name { white-space: nowrap; }
-#brigade-table .cell-name b { font-size: 13px; }
-#brigade-table .honorific-inline { display: inline-block; margin-left: 8px; vertical-align: middle; }
-#brigade-table .honorific-inline .card__honorific { font-size: 11px; }
-#brigade-table .flag { width: 22px; height: 14px; }
+.brigades-table.brigades-table--compact { min-width: 0; }
+.brigades-table.brigades-table--compact thead th { padding: 7px 10px; }
+.brigades-table.brigades-table--compact td { padding: 3px 10px; font-size: 12.5px; }
+.brigades-table.brigades-table--compact .table-group td { padding-top: 10px; padding-bottom: 4px; }
+.brigades-table.brigades-table--compact .emblem--sm,
+.brigades-table.brigades-table--compact .emblem--sm.has-image { width: 24px; height: 28px; font-size: 10px; }
+.brigades-table.brigades-table--compact { table-layout: auto; width: 100%; }
+/* Назва може переноситись (на /brigades є довгі назви + почесні імена), щоб таблиця не виходила за межі сторінки. */
+.brigades-table.brigades-table--compact .cell-name { white-space: normal; }
+#brigade-table.brigades-table--compact .cell-name { white-space: nowrap; } /* бранчі ЗСУ: назва в один рядок, як і було */
+.brigades-table.brigades-table--compact td.mono,
+.brigades-table.brigades-table--compact .num-mono,
+.brigades-table.brigades-table--compact td:nth-child(n+3):not(.cell-name) { white-space: nowrap; }
+.brigades-table.brigades-table--compact .tag { font-size: 11px; padding: 2px 6px; }
+/* "Рід військ": один рядок фіксованої ширини, зайве обрізається з "…", повна назва — у title. */
+.brigades-table.brigades-table--compact td.cell-branch { max-width: 150px; overflow: hidden; }
+.brigades-table.brigades-table--compact .cell-branch .tag { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brigades-table.brigades-table--compact .cell-name b { font-size: 13px; }
+.brigades-table.brigades-table--compact .honorific-inline { display: inline-block; margin-left: 8px; vertical-align: middle; }
+.brigades-table.brigades-table--compact .honorific-inline .card__honorific { font-size: 11px; }
+.brigades-table.brigades-table--compact .flag { width: 22px; height: 14px; }
 .branch-side.is-compact .corps-filter,
 .branch-side.is-compact .corps-filter--sm { display: flex; flex-wrap: wrap; gap: 6px; }
 .branch-side.is-compact .corps-filter__item-wrap,

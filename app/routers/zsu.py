@@ -122,7 +122,7 @@ def _find_item(slug: str) -> dict:
 
 _BRIGADES_QUERY = """
     SELECT b.brigade_id, b.name, b.emblem_file, b.flag_date,
-           b.formed_date, b.brigade_date,
+           b.formed_date, b.brigade_date, b.military_unit_number,
            ac.corps_name, l.city_name,
            b.corps_id, b.territorial_command_id, b.troop_type_id,
            tt.type_name AS troop_type_name,

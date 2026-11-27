@@ -74,7 +74,7 @@ def tradition_detail(tradition_id: int, request: Request, db: sqlite3.Connection
         raise HTTPException(status_code=404)
 
     brigades = db.execute(
-        """SELECT b.brigade_id, b.name, mb.branch_name, ac.corps_name,
+        """SELECT b.brigade_id, b.name, b.military_unit_number, mb.branch_name, ac.corps_name,
                   bt.date_assigned, bt.unit_name
            FROM brigade_traditions bt
            JOIN brigades b ON bt.brigade_id = b.brigade_id

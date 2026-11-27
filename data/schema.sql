@@ -171,6 +171,7 @@ CREATE TABLE brigades (
     flag_date                DATE,
     brigade_date             DATE, -- дата, коли підрозділ став бригадою; якщо порожньо, на списках показується formed_date
     location_id              INTEGER REFERENCES locations (location_id),
+    military_unit_number     TEXT CHECK (military_unit_number IS NULL OR (length(military_unit_number) = 4 AND military_unit_number NOT GLOB '*[^0-9]*')), -- 4 цифри номера в/ч; літера "А" додається при показі
     emblem_file              TEXT,
     unit_type_id             INTEGER REFERENCES unit_types (unit_type_id), -- Бригада / Полк / Батальон
     created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

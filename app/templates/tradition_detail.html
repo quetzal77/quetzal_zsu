@@ -36,6 +36,7 @@
         <thead>
           <tr>
             <th>Назва з'єднання</th>
+            <th>Номер частини</th>
             {% if tradition.is_honorific %}
                 <th>Почесне ім'я</th>
             {% endif %}
@@ -47,6 +48,7 @@
           {% for b in brigades %}
             <tr onclick="location.href='/brigades/{{ b.brigade_id }}'">
               <td class="cell-name"><b>{{ b.name }}</b></td>
+              <td class="mono">{{ ('А' ~ b.military_unit_number) if b.military_unit_number else '—' }}</td>
               {% if tradition.is_honorific %}
                 <td><span class="honorific-badge card__honorific">{{ b.unit_name or '—' }}</span></td>
               {% endif %}

@@ -103,12 +103,12 @@
 
 {% if view == 'table' %}
   <div class="table-wrap">
-    <table class="brigades-table" id="brigades-table">
-      <thead><tr><th>№</th><th>Назва</th><th>Рід військ</th><th>Корпус</th><th>ППД</th><th>Рік заснування</th><th>Прапор</th></tr></thead>
+    <table class="brigades-table brigades-table--compact" id="brigades-table">
+      <thead><tr><th>№</th><th>Назва</th><th>Номер частини</th><th>Рід військ</th><th>Корпус</th><th>ППД</th><th>Рік заснування</th><th>Прапор</th></tr></thead>
       <tbody>
         {% for b in brigades %}
           {% if loop.first or b.branch_name != brigades[loop.index0 - 1].branch_name %}
-            <tr class="table-group"><td colspan="7">{{ b.branch_name or 'Без роду військ' }}</td></tr>
+            <tr class="table-group"><td colspan="8">{{ b.branch_name or 'Без роду військ' }}</td></tr>
           {% endif %}
           <tr class="brigade-row" data-name="{{ b.name|lower }}" onclick="location.href='/brigades/{{ b.brigade_id }}'">
             <td><span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
@@ -125,8 +125,9 @@
                 </div>
                 {% endif %}
             </td>
-            <td><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
-            <td>{{ b.corps_name or '—' }}</td>
+            <td class="mono">{{ ('А' ~ b.military_unit_number) if b.military_unit_number else '—' }}</td>
+            <td class="cell-branch" title="{{ b.branch_name or '' }}"><span class="tag tag--branch">{{ b.branch_name or '—' }}</span></td>
+            <td title="{{ b.corps_name or '' }}">{{ b.corps_name.split(' ')[0] if b.corps_name else '—' }}</td>
             <td>{{ b.city_name or '—' }}</td>
             <td class="num-mono">{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</td>
             <td>
@@ -138,7 +139,7 @@
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="7" class="empty">Нічого не знайдено.</td></tr>
+          <tr><td colspan="8" class="empty">Нічого не знайдено.</td></tr>
         {% endfor %}
       </tbody>
     </table>

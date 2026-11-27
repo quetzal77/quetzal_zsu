@@ -78,6 +78,14 @@
       </select>
     </div>
     <div class="field">
+      <label for="military_unit_number">Військова частина (4 цифри)</label>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="mono" style="font-weight:700">А</span>
+        <input id="military_unit_number" name="military_unit_number" class="mono" value="{{ brigade.military_unit_number or '' }}"
+               placeholder="_ _ _ _" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" title="Рівно 4 цифри; літера А додається автоматично">
+      </div>
+    </div>
+    <div class="field">
       <label for="formed_date">Засновано (РРРР-ММ-ДД)</label>
       <input id="formed_date" name="formed_date" class="mono" value="{{ brigade.formed_date or '' }}" placeholder="РРРР-ММ-ДД">
     </div>

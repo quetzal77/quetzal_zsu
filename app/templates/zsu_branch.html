@@ -150,12 +150,12 @@
       {% endfor %}
     </div>
     <div class="table-wrap" id="brigade-table-wrap">
-      <table class="brigades-table" id="brigade-table">
-        <thead><tr><th>№</th><th>Назва</th><th>Корпус</th><th>ППД</th><th>Рік заснування</th><th>Прапор</th></tr></thead>
+      <table class="brigades-table brigades-table--compact" id="brigade-table">
+        <thead><tr><th>№</th><th>Назва</th><th>Номер частини</th><th>Корпус</th><th>ППД</th><th>Рік заснування</th><th>Прапор</th></tr></thead>
         <tbody>
           {% for b in brigades %}
             {% if loop.first or b.troop_type_name != brigades[loop.index0 - 1].troop_type_name %}
-            <tr class="table-group"><td colspan="6">{{ b.troop_type_name or 'Без типу військ' }}</td></tr>
+            <tr class="table-group"><td colspan="7">{{ b.troop_type_name or 'Без типу військ' }}</td></tr>
             {% endif %}
             <tr class="brigade-row" data-corps-id="{{ b.corps_id or '' }}" data-command-id="{{ b.territorial_command_id or '' }}" data-troop-type-id="{{ b.troop_type_id or '' }}" data-details-id="{{ b.force_details_id or '' }}" onclick="location.href='/brigades/{{ b.brigade_id }}'">
               <td><span class="emblem emblem--sm {{ 'has-image' if b.emblem_file }}">
@@ -165,7 +165,8 @@
                 <b>{{ b.name }}</b>
                 {% if b.honorific_name %}<div class="honorific-inline"><span class="honorific-badge card__honorific" title="{{ b.honorific_name }}">{{ b.honorific_name }}</span></div>{% endif %}
               </td>
-              <td title="{{ b.corps_name or '' }}">{{ (b.corps_name | replace('-й армійський корпус', ' АК') | replace('-й корпус морської піхоти', ' КМП') | replace('-й корпус швидкого реагування Десантно-штурмових військ', ' КШР') | replace('-й корпус Десантно-штурмових військ', ' КДШВ') | replace('-й корпус НГУ «Азов»', ' КНГУ') | replace('-й корпус НГУ «Хартія»', ' КНГУ')) if b.corps_name else '—' }}</td>
+              <td class="mono">{{ ('А' ~ b.military_unit_number) if b.military_unit_number else '—' }}</td>
+              <td title="{{ b.corps_name or '' }}">{{ b.corps_name.split(' ')[0] if b.corps_name else '—' }}</td>
               <td>{{ b.city_name or '—' }}</td>
               <td class="num-mono">{{ (b.brigade_date or b.formed_date)[:4] if (b.brigade_date or b.formed_date) else '—' }}</td>
               <td>
@@ -175,7 +176,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="6" class="empty">З'єднання ще не додано.</td></tr>
+            <tr><td colspan="7" class="empty">З'єднання ще не додано.</td></tr>
           {% endfor %}
         </tbody>
       </table>
